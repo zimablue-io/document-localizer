@@ -1,0 +1,37 @@
+# Test artifacts (generated during e2e tests, cleared on each run)
+tests/fixtures/artifacts/
+
+# Logs
+*.log
+
+# macOS system files
+.DS_Store
+
+# Node.js modules
+node_modules/
+
+# Test coverage
+coverage/
+
+# IDE
+.vscode/settings.json
+
+# Obsidian vault workspace (sensitive documents - NOT committed)
+workspace/input/*
+workspace/markdown/*
+workspace/output/*
+workspace/review/*
+workspace/.obsidian/workspace.json
+workspace/.obsidian/app.json
+workspace/temp/
+workspace/.batch-status.json
+
+# Secrets
+.env
+
+# Build outputs
+dist/
+apps/desktop/dist/
+
+# test resources
+tests/fixtures/resources/

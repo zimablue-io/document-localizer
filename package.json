@@ -1,0 +1,24 @@
+{
+	"name": "doclocalizer",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Document localization with AI",
+	"workspaces": [
+		"packages/*",
+		"apps/*"
+	],
+	"scripts": {
+		"dev:desktop": "pnpm --filter @doclocalizer/desktop tauri dev",
+		"build:core": "pnpm --filter @doclocalizer/core build",
+		"build:desktop": "pnpm --filter @doclocalizer/desktop build",
+		"build": "pnpm run build:core && pnpm run build:desktop",
+		"lint": "biome check ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.12",
+		"@types/node": "^22.15.3",
+		"typescript": "^5.8.3",
+		"vitest": "^4.1.4"
+	}
+}
