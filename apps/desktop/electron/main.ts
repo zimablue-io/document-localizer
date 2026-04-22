@@ -13,6 +13,7 @@ function createWindow() {
 		width: 1200,
 		height: 800,
 		title: 'Document Localizer',
+		backgroundColor: '#0a0a0f',
 		webPreferences: {
 			nodeIntegration: false,
 			contextIsolation: true,

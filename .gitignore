@@ -32,6 +32,3 @@ workspace/.batch-status.json
 # Build outputs
 dist/
 apps/desktop/dist/
-
-# test resources
-tests/fixtures/resources/

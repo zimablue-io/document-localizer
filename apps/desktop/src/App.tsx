@@ -7,21 +7,13 @@ import DocumentList from './components/DocumentList'
 import EmptyState from './components/EmptyState'
 import Header from './components/Header'
 import SettingsModal from './components/SettingsModal'
-import './index.css'
 
-const DEFAULT_API_URL = 'http://localhost:11434/v1'
-const DEFAULT_MODEL = 'qwen2.5:7b-instruct'
+const DEFAULT_API_URL = 'http://localhost:8080/v1'
+const DEFAULT_MODEL = 'llama:3.2:3b-instruct'
 
-const DEFAULT_PROMPT = `You are a professional localization expert. Translate the following text to {locale}.
+const DEFAULT_PROMPT = `Convert this American English text to {locale}. Preserve all markdown formatting. Only output the converted text.
 
-IMPORTANT RULES:
-- Preserve ALL markdown formatting exactly (headings with #, emphasis with * or _, lists with - or numbers, code blocks with \`, etc.)
-- Only change the actual text content, never modify formatting
-- Do NOT add any commentary, notes, or explanations
-- Do NOT use markers like ---BEGIN MARKDOWN--- or ---END MARKDOWN---
-- Return ONLY the translated text
-
-Text to translate:
+Text to convert:
 {text}`
 
 interface Locale {
@@ -179,6 +171,12 @@ export default function App() {
 							.trim()
 					}
 
+					// Strip prompt echo if AI included it in response
+					const promptEchoIndex = content.indexOf('Text to translate:')
+					if (promptEchoIndex !== -1) {
+						content = content.slice(promptEchoIndex + 'Text to translate:'.length).trim()
+					}
+
 					localizedChunks.push(content)
 					await window.electron.writeTextFile(localizedPath, localizedChunks.join('\n'))
 				}
@@ -247,7 +245,7 @@ export default function App() {
 	const selectedDoc = documents.find((d) => d.id === selectedDocId)
 
 	return (
-		<div className="min-h-screen bg-background text-foreground flex flex-col">
+		<div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
 			<Toaster position="top-right" richColors closeButton />
 
 			<Header

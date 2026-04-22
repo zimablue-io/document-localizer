@@ -13,12 +13,14 @@ export default defineConfig({
 		port: 1420,
 		strictPort: true,
 		fs: {
-			allow: ['../../packages/ui', '.'],
+			allow: ['../../packages/ui', '../../packages/core', '.'],
 		},
 	},
 	resolve: {
 		alias: {
 			'@': path.resolve(__dirname, './src'),
+			'@doclocalizer/core': path.resolve(__dirname, '../../packages/core/src'),
+			'@doclocalizer/ui': path.resolve(__dirname, '../../packages/ui/src'),
 		},
 	},
 	build: {

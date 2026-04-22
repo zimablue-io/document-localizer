@@ -4,8 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
-const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 // For dev logging
 const DEBUG = true;
 const log = (...args) => DEBUG && console.log('[electron]', ...args);
@@ -15,6 +15,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         title: 'Document Localizer',
+        backgroundColor: '#0a0a0f',
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -80,7 +81,9 @@ electron_1.ipcMain.handle('test-connection', async (_event, url) => {
         const response = await electron_1.net.fetch(url);
         const data = await response.json();
         const headers = {};
-        response.headers.forEach((value, key) => { headers[key] = value; });
+        response.headers.forEach((value, key) => {
+            headers[key] = value;
+        });
         return { status: response.status, headers, body: JSON.stringify(data).substring(0, 500) };
     }
     catch (e) {
@@ -105,9 +108,13 @@ electron_1.ipcMain.handle('ai:generate', async (_event, options) => {
         log('Response status:', response.status);
         if (response.status !== 200) {
             const text = await response.text();
-            return { content: '', error: `HTTP ${response.status}: ${text.substring(0, 500)}`, status: response.status };
+            return {
+                content: '',
+                error: `HTTP ${response.status}: ${text.substring(0, 500)}`,
+                status: response.status,
+            };
         }
-        const data = await response.json();
+        const data = (await response.json());
         const content = data.choices?.[0]?.message?.content || data.message?.content || data.content;
         if (!content) {
             log('No content extracted from response');

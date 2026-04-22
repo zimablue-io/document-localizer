@@ -10,7 +10,7 @@ import * as path from 'path'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 // Test with real PDF file
-const TEST_PDF_PATH = '/Users/lefa/Desktop/man-from-the-south.pdf'
+const TEST_PDF_PATH = path.join(__dirname, '../../../../tests/fixtures/resources/man-from-the-south.pdf')
 
 describe('Real Integration Tests', () => {
 	let pdfExists: boolean
@@ -42,7 +42,7 @@ describe('Real Integration Tests', () => {
 		const mdPath = getMdFilePath(TEST_PDF_PATH)
 		console.log(`getMdFilePath("${TEST_PDF_PATH}") = "${mdPath}"`)
 
-		expect(mdPath).toBe('/Users/lefa/Desktop/man-from-the-south.md')
+		expect(mdPath).toBe(path.join(__dirname, '../../../../tests/fixtures/resources/man-from-the-south.md'))
 	})
 
 	it('should verify .md file can be written and read', () => {

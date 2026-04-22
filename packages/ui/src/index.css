@@ -3,32 +3,34 @@
 @source "./components/**/*.{js,ts,jsx,tsx}";
 
 :root {
-	--background: oklch(0.11 0.02 260);
-	--foreground: oklch(0.95 0 0);
-	--card: oklch(0.15 0.02 260);
-	--card-foreground: oklch(0.95 0 0);
-	--popover: oklch(0.15 0.02 260);
-	--popover-foreground: oklch(0.95 0 0);
-	--primary: oklch(0.65 0.14 155);
-	--primary-foreground: oklch(0.15 0.02 155);
-	--secondary: oklch(0.2 0.02 260);
-	--secondary-foreground: oklch(0.9 0 0);
-	--muted: oklch(0.2 0.02 260);
-	--muted-foreground: oklch(0.65 0 0);
-	--accent: oklch(0.22 0.02 260);
-	--accent-foreground: oklch(0.9 0 0);
-	--destructive: oklch(0.6 0.18 25);
-	--destructive-foreground: oklch(0.98 0 0);
-	--border: oklch(0.25 0.02 260);
-	--input: oklch(0.22 0.02 260);
-	--ring: oklch(0.65 0.14 155);
+	--background: #0a0a0f;
+	--foreground: #f0f0f0;
+	--card: #1a1a2e;
+	--card-foreground: #f0f0f0;
+	--popover: #1a1a2e;
+	--popover-foreground: #f0f0f0;
+	--primary: #6366f1;
+	--primary-foreground: #ffffff;
+	--secondary: #1e1e32;
+	--secondary-foreground: #e0e0e0;
+	--muted: #1e1e32;
+	--muted-foreground: #888888;
+	--accent: #2d2d44;
+	--accent-foreground: #e0e0e0;
+	--destructive: #ef4444;
+	--destructive-foreground: #ffffff;
+	--border: #2d2d44;
+	--input: #1e1e32;
+	--ring: #6366f1;
 	--radius: 0.5rem;
 }
 
-body {
+html, body {
 	background: var(--background);
 	color: var(--foreground);
 	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	min-height: 100vh;
+	margin: 0;
 }
 
 @theme inline {
