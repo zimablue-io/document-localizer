@@ -53,6 +53,27 @@ electron_1.app.on('window-all-closed', () => {
     }
 });
 // IPC Handlers
+// File validation for drag and drop
+const ALLOWED_EXTENSIONS = ['pdf', 'md', 'markdown'];
+function isValidFilePath(filePath) {
+    const ext = path_1.default.extname(filePath).toLowerCase().replace('.', '');
+    return ALLOWED_EXTENSIONS.includes(ext);
+}
+electron_1.ipcMain.handle('dialog:validateFilePaths', async (_event, filePaths) => {
+    const validPaths = filePaths.filter(isValidFilePath);
+    return {
+        valid: validPaths,
+        invalid: filePaths.filter((p) => !isValidFilePath(p)),
+    };
+});
+// Handle drag and drop from UI - receive file paths and validate
+electron_1.ipcMain.handle('dialog:handleFileDrop', async (_event, filePaths) => {
+    const validPaths = filePaths.filter(isValidFilePath);
+    return {
+        valid: validPaths,
+        invalid: filePaths.filter((p) => !isValidFilePath(p)),
+    };
+});
 electron_1.ipcMain.handle('dialog:openFile', async (_event, options) => {
     if (!mainWindow)
         return null;
@@ -94,6 +115,104 @@ electron_1.ipcMain.handle('pdf:parse', async (_event, filePath) => {
     const buffer = fs_1.default.readFileSync(filePath);
     // Return base64 encoded PDF for frontend processing
     return { base64: buffer.toString('base64'), size: buffer.length };
+});
+// Settings persistence using JSON file
+const settingsFilePath = path_1.default.join(electron_1.app.getPath('userData'), 'settings.json');
+function ensureUserDataDir() {
+    const userDataPath = electron_1.app.getPath('userData');
+    if (!fs_1.default.existsSync(userDataPath)) {
+        fs_1.default.mkdirSync(userDataPath, { recursive: true });
+    }
+}
+electron_1.ipcMain.handle('settings:load', async () => {
+    try {
+        ensureUserDataDir();
+        if (fs_1.default.existsSync(settingsFilePath)) {
+            const data = fs_1.default.readFileSync(settingsFilePath, 'utf-8');
+            return JSON.parse(data);
+        }
+    }
+    catch (e) {
+        log('Error loading settings:', e);
+    }
+    return null;
+});
+electron_1.ipcMain.handle('settings:save', async (_event, settings) => {
+    try {
+        ensureUserDataDir();
+        fs_1.default.writeFileSync(settingsFilePath, JSON.stringify(settings, null, 2), 'utf-8');
+        log('Settings saved to:', settingsFilePath);
+        return true;
+    }
+    catch (e) {
+        log('Error saving settings:', e);
+        return false;
+    }
+});
+// History persistence using JSON file
+const historyFilePath = path_1.default.join(electron_1.app.getPath('userData'), 'history.json');
+const MAX_HISTORY_ITEMS = 100;
+electron_1.ipcMain.handle('history:get', async () => {
+    try {
+        ensureUserDataDir();
+        if (fs_1.default.existsSync(historyFilePath)) {
+            const data = fs_1.default.readFileSync(historyFilePath, 'utf-8');
+            return JSON.parse(data);
+        }
+    }
+    catch (e) {
+        log('Error loading history:', e);
+    }
+    return [];
+});
+electron_1.ipcMain.handle('history:add', async (_event, entry) => {
+    try {
+        ensureUserDataDir();
+        const history = fs_1.default.existsSync(historyFilePath)
+            ? JSON.parse(fs_1.default.readFileSync(historyFilePath, 'utf-8'))
+            : [];
+        const newEntry = {
+            ...entry,
+            id: crypto.randomUUID(),
+        };
+        history.unshift(newEntry);
+        fs_1.default.writeFileSync(historyFilePath, JSON.stringify(history.slice(0, MAX_HISTORY_ITEMS), null, 2), 'utf-8');
+        return newEntry;
+    }
+    catch (e) {
+        log('Error adding history entry:', e);
+        return null;
+    }
+});
+electron_1.ipcMain.handle('history:update', async (_event, id, updates) => {
+    try {
+        ensureUserDataDir();
+        if (!fs_1.default.existsSync(historyFilePath))
+            return null;
+        const history = JSON.parse(fs_1.default.readFileSync(historyFilePath, 'utf-8'));
+        const index = history.findIndex((h) => h.id === id);
+        if (index !== -1) {
+            history[index] = { ...history[index], ...updates };
+            fs_1.default.writeFileSync(historyFilePath, JSON.stringify(history, null, 2), 'utf-8');
+            return history[index];
+        }
+        return null;
+    }
+    catch (e) {
+        log('Error updating history entry:', e);
+        return null;
+    }
+});
+electron_1.ipcMain.handle('history:clear', async () => {
+    try {
+        ensureUserDataDir();
+        fs_1.default.writeFileSync(historyFilePath, JSON.stringify([], null, 2), 'utf-8');
+        return true;
+    }
+    catch (e) {
+        log('Error clearing history:', e);
+        return false;
+    }
 });
 // AI Generation using Electron's net.fetch (Chromium networking)
 electron_1.ipcMain.handle('ai:generate', async (_event, options) => {

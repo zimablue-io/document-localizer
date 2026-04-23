@@ -58,6 +58,31 @@ app.on('window-all-closed', () => {
 
 // IPC Handlers
 
+// File validation for drag and drop
+const ALLOWED_EXTENSIONS = ['pdf', 'md', 'markdown']
+
+function isValidFilePath(filePath: string): boolean {
+	const ext = path.extname(filePath).toLowerCase().replace('.', '')
+	return ALLOWED_EXTENSIONS.includes(ext)
+}
+
+ipcMain.handle('dialog:validateFilePaths', async (_event, filePaths: string[]) => {
+	const validPaths = filePaths.filter(isValidFilePath)
+	return {
+		valid: validPaths,
+		invalid: filePaths.filter((p) => !isValidFilePath(p)),
+	}
+})
+
+// Handle drag and drop from UI - receive file paths and validate
+ipcMain.handle('dialog:handleFileDrop', async (_event, filePaths: string[]) => {
+	const validPaths = filePaths.filter(isValidFilePath)
+	return {
+		valid: validPaths,
+		invalid: filePaths.filter((p) => !isValidFilePath(p)),
+	}
+})
+
 ipcMain.handle('dialog:openFile', async (_event, options) => {
 	if (!mainWindow) return null
 	const result = await dialog.showOpenDialog(mainWindow, {
@@ -103,6 +128,120 @@ ipcMain.handle('pdf:parse', async (_event, filePath) => {
 	const buffer = fs.readFileSync(filePath)
 	// Return base64 encoded PDF for frontend processing
 	return { base64: buffer.toString('base64'), size: buffer.length }
+})
+
+// Settings persistence using JSON file
+const settingsFilePath = path.join(app.getPath('userData'), 'settings.json')
+
+interface HistoryEntry {
+	id: string
+	fileName: string
+	filePath: string
+	sourceLocale: string
+	targetLocale: string
+	processedAt: string
+	status: 'processed' | 'approved' | 'rejected' | 'error'
+	errorMessage?: string
+	chunksProcessed?: number
+}
+
+function ensureUserDataDir(): void {
+	const userDataPath = app.getPath('userData')
+	if (!fs.existsSync(userDataPath)) {
+		fs.mkdirSync(userDataPath, { recursive: true })
+	}
+}
+
+ipcMain.handle('settings:load', async () => {
+	try {
+		ensureUserDataDir()
+		if (fs.existsSync(settingsFilePath)) {
+			const data = fs.readFileSync(settingsFilePath, 'utf-8')
+			return JSON.parse(data)
+		}
+	} catch (e) {
+		log('Error loading settings:', e)
+	}
+	return null
+})
+
+ipcMain.handle('settings:save', async (_event, settings) => {
+	try {
+		ensureUserDataDir()
+		fs.writeFileSync(settingsFilePath, JSON.stringify(settings, null, 2), 'utf-8')
+		log('Settings saved to:', settingsFilePath)
+		return true
+	} catch (e) {
+		log('Error saving settings:', e)
+		return false
+	}
+})
+
+// History persistence using JSON file
+const historyFilePath = path.join(app.getPath('userData'), 'history.json')
+const MAX_HISTORY_ITEMS = 100
+
+ipcMain.handle('history:get', async () => {
+	try {
+		ensureUserDataDir()
+		if (fs.existsSync(historyFilePath)) {
+			const data = fs.readFileSync(historyFilePath, 'utf-8')
+			return JSON.parse(data)
+		}
+	} catch (e) {
+		log('Error loading history:', e)
+	}
+	return []
+})
+
+ipcMain.handle('history:add', async (_event, entry: Omit<HistoryEntry, 'id'>) => {
+	try {
+		ensureUserDataDir()
+		const history: HistoryEntry[] = fs.existsSync(historyFilePath)
+			? JSON.parse(fs.readFileSync(historyFilePath, 'utf-8'))
+			: []
+
+		const newEntry: HistoryEntry = {
+			...entry,
+			id: crypto.randomUUID(),
+		}
+		history.unshift(newEntry)
+		fs.writeFileSync(historyFilePath, JSON.stringify(history.slice(0, MAX_HISTORY_ITEMS), null, 2), 'utf-8')
+		return newEntry
+	} catch (e) {
+		log('Error adding history entry:', e)
+		return null
+	}
+})
+
+ipcMain.handle('history:update', async (_event, id: string, updates: Partial<HistoryEntry>) => {
+	try {
+		ensureUserDataDir()
+		if (!fs.existsSync(historyFilePath)) return null
+
+		const history: HistoryEntry[] = JSON.parse(fs.readFileSync(historyFilePath, 'utf-8'))
+		const index = history.findIndex((h) => h.id === id)
+		if (index !== -1) {
+			history[index] = { ...history[index], ...updates }
+			fs.writeFileSync(historyFilePath, JSON.stringify(history, null, 2), 'utf-8')
+			return history[index]
+		}
+		return null
+	} catch (e) {
+		log('Error updating history entry:', e)
+		return null
+	}
+})
+
+ipcMain.handle('history:clear', async () => {
+	try {
+		ensureUserDataDir()
+		fs.writeFileSync(historyFilePath, JSON.stringify([], null, 2), 'utf-8')
+		return true
+	} catch (e) {
+		log('Error clearing history:', e)
+		return false
+	}
 })
 
 // AI Generation using Electron's net.fetch (Chromium networking)

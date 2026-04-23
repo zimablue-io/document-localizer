@@ -30,6 +30,57 @@ export interface DiffLine {
 	content: string
 }
 
+// Document processing types
+export type DocumentStatus = 'idle' | 'parsing' | 'localizing' | 'paused' | 'review' | 'approved' | 'exported' | 'error'
+
+// Change review types
+export type ChangeStatus = 'pending' | 'approved' | 'rejected' | 'ignored'
+
+export type ChunkStatus = 'pending' | 'processing' | 'completed' | 'failed'
+
+export interface Chunk {
+	id: string
+	paragraphIndices: number[]
+	originalText: string
+	localizedText?: string
+	status: ChunkStatus
+	charCount: number
+	createdAt: string
+	processedAt?: string
+	error?: string
+}
+
+export interface ProcessingState {
+	documentId: string
+	chunks: Chunk[]
+	totalChunks: number
+	completedChunks: number
+	failedChunks: number
+	currentChunkIndex: number
+}
+
+export interface TextChange {
+	id: string
+	paragraphIndex: number
+	wordIndex: number // Start position in original text
+	originalText: string
+	localizedText: string
+	context: string // Surrounding text for context
+	status: ChangeStatus
+	comment?: string
+	timestamp: string
+}
+
+export interface ChangeReviewState {
+	changes: TextChange[]
+	totalChanges: number
+	approvedCount: number
+	rejectedCount: number
+	ignoredCount: number
+	pendingCount: number
+}
+
+// Extend DocumentState to include change review
 export interface DocumentState {
 	id: string
 	name: string
@@ -45,6 +96,10 @@ export interface DocumentState {
 	}
 	// For targeted re-localization
 	chunkErrorIndex?: number
+	// For change review
+	changeReview?: ChangeReviewState
+	// For processing queue
+	processingState?: ProcessingState
 }
 
 export interface ClassifiedChange {
@@ -76,9 +131,6 @@ export interface ApprovalRecord {
 	targetLocale: string
 	notes?: string
 }
-
-// Document processing types
-export type DocumentStatus = 'idle' | 'parsing' | 'localizing' | 'review' | 'approved' | 'exported' | 'error'
 
 export interface DocumentInput {
 	id: string

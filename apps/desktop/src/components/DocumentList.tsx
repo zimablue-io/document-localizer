@@ -1,4 +1,5 @@
 import type { DocumentState } from '@doclocalizer/core'
+import { useState, useCallback } from 'react'
 import { Button } from '@doclocalizer/ui'
 
 interface DocumentListProps {
@@ -6,12 +7,29 @@ interface DocumentListProps {
 	onProcess: (id: string) => void
 	onReview: (id: string) => void
 	onRemove: (id: string) => void
+	onStop?: (id: string) => void
+	onPause?: (id: string) => void
+	onResume?: (id: string) => void
+	onFilesAdded?: (paths: string[]) => void
+}
+
+const ALLOWED_EXTENSIONS = ['.pdf', '.md', '.markdown']
+
+function getFileExtension(filePath: string): string {
+	const parts = filePath.split('.')
+	return parts.length > 1 ? parts.pop()!.toLowerCase() : ''
+}
+
+function isValidFile(filePath: string): boolean {
+	const ext = getFileExtension(filePath)
+	return ALLOWED_EXTENSIONS.some((e) => e === `.${ext}`)
 }
 
 const statusLabels: Record<DocumentState['status'], string> = {
 	idle: 'Ready to process',
 	parsing: 'Extracting text...',
 	localizing: 'Localizing...',
+	paused: 'Paused',
 	review: 'Review required',
 	approved: 'Approved',
 	exported: 'Exported',
@@ -32,9 +50,62 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
 	)
 }
 
-export default function DocumentList({ documents, onProcess, onReview, onRemove }: DocumentListProps) {
+export default function DocumentList({
+	documents,
+	onProcess,
+	onReview,
+	onRemove,
+	onStop,
+	onPause,
+	onResume,
+	onFilesAdded,
+}: DocumentListProps) {
+	const [isDragging, setIsDragging] = useState(false)
+
+	const handleDragOver = useCallback((e: React.DragEvent) => {
+		e.preventDefault()
+		e.stopPropagation()
+		setIsDragging(true)
+	}, [])
+
+	const handleDragLeave = useCallback((e: React.DragEvent) => {
+		e.preventDefault()
+		e.stopPropagation()
+		setIsDragging(false)
+	}, [])
+
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault()
+			e.stopPropagation()
+			setIsDragging(false)
+
+			const files = Array.from(e.dataTransfer.files)
+			if (files.length === 0) return
+
+			// Use Electron's webUtils to get file paths from dropped files
+			const filePaths = window.electron.getDroppedFilePaths(files)
+			const validFiles = filePaths.filter(isValidFile)
+
+			if (validFiles.length > 0 && onFilesAdded) {
+				onFilesAdded(validFiles)
+			}
+		},
+		[onFilesAdded]
+	)
+
 	return (
-		<div className="space-y-3">
+		<div
+			className={`space-y-3 transition-colors ${isDragging ? 'bg-primary/5 rounded-lg p-2' : ''}`}
+			onDragOver={handleDragOver}
+			onDragLeave={handleDragLeave}
+			onDrop={handleDrop}
+		>
+			{isDragging && (
+				<div className="border-2 border-dashed border-primary rounded-lg p-4 text-center text-primary">
+					Drop files to add more documents
+				</div>
+			)}
 			{documents.map((doc) => (
 				<div
 					key={doc.id}
@@ -75,6 +146,21 @@ export default function DocumentList({ documents, onProcess, onReview, onRemove 
 						{doc.status === 'idle' && (
 							<Button variant="secondary" onClick={() => onProcess(doc.id)}>
 								Process
+							</Button>
+						)}
+						{(doc.status === 'parsing' || doc.status === 'localizing') && onStop && (
+							<Button variant="destructive" size="sm" onClick={() => onStop(doc.id)}>
+								Stop
+							</Button>
+						)}
+						{doc.status === 'localizing' && onPause && (
+							<Button variant="secondary" size="sm" onClick={() => onPause(doc.id)}>
+								Pause
+							</Button>
+						)}
+						{doc.status === 'paused' && onResume && (
+							<Button variant="secondary" size="sm" onClick={() => onResume(doc.id)}>
+								Resume
 							</Button>
 						)}
 						{doc.status === 'review' && <Button onClick={() => onReview(doc.id)}>Review</Button>}

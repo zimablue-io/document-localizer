@@ -31,17 +31,17 @@ interface Settings {
 	customPrompt?: string
 }
 
-const DEFAULT_PROMPT = `You are a professional localization expert. Translate the following text to {locale}.
+const DEFAULT_PROMPT = `Translate the following markdown text to {locale}.
 
-IMPORTANT RULES:
-- Preserve ALL markdown formatting exactly (headings with #, emphasis with * or _, lists with - or numbers, code blocks with \`, etc.)
-- Only change the actual text content, never modify formatting
-- Do NOT add any commentary, notes, or explanations
-- Do NOT use markers like ---BEGIN MARKDOWN--- or ---END MARKDOWN---
-- Return ONLY the translated text
+CRITICAL RULES:
+1. Preserve EXACTLY the same paragraph structure - keep blank lines between paragraphs
+2. Preserve ALL markdown formatting (headings, bold, italic, quotes, dialogue, etc.)
+3. ONLY translate the text content, never modify the structure
+4. Return ONLY the translated text - NO markers, comments, or explanations
 
-Text to translate:
-{text}`
+---BEGIN TEXT---
+{text}
+---END TEXT---`
 
 interface SettingsModalProps {
 	settings: Settings
@@ -125,13 +125,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 
 					<ScrollArea className="flex-1 min-h-0 mt-4">
 						<TabsContent value="locales" className="space-y-4 pr-4">
-							{settings.customLocales.length === 0 ? (
-								<div className="text-center py-8">
-									<p className="text-muted-foreground mb-4">
-										No locales configured. Add your first locale below to get started.
-									</p>
-								</div>
-							) : (
+							{settings.customLocales.length > 0 && (
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-1.5">
 										<Label htmlFor="source-locale">Source Locale</Label>
@@ -176,28 +170,26 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 								</div>
 							)}
 
-							{settings.customLocales.length > 0 && (
-								<div className="border-t border-border pt-4">
-									<Label className="mb-2 block">Add Locale</Label>
-									<div className="flex gap-2">
-										<Input
-											value={newLocaleCode}
-											onChange={(e) => setNewLocaleCode(e.target.value)}
-											placeholder="Code (e.g., pt-BR)"
-											className="flex-1"
-										/>
-										<Input
-											value={newLocaleName}
-											onChange={(e) => setNewLocaleName(e.target.value)}
-											placeholder="Name (e.g., Portuguese Brazil)"
-											className="flex-1"
-										/>
-										<Button onClick={handleAddLocale} disabled={!newLocaleCode || !newLocaleName}>
-											Add
-										</Button>
-									</div>
+							<div className="border-t border-border pt-4">
+								<Label className="mb-2 block">Add Locale</Label>
+								<div className="flex gap-2">
+									<Input
+										value={newLocaleCode}
+										onChange={(e) => setNewLocaleCode(e.target.value)}
+										placeholder="Code (e.g., pt-BR)"
+										className="flex-1"
+									/>
+									<Input
+										value={newLocaleName}
+										onChange={(e) => setNewLocaleName(e.target.value)}
+										placeholder="Name (e.g., Portuguese Brazil)"
+										className="flex-1"
+									/>
+									<Button onClick={handleAddLocale} disabled={!newLocaleCode || !newLocaleName}>
+										Add
+									</Button>
 								</div>
-							)}
+							</div>
 
 							{settings.customLocales.length > 0 && (
 								<div className="space-y-2">

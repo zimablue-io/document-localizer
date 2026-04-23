@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "dist-electron/main.cjs",
   "scripts": {
-    "dev": "vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js && NODE_ENV=production electron .",
+    "dev": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js && NODE_ENV=production electron .",
     "dev:web": "vite",
     "build": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js",
     "preview": "vite preview",
@@ -13,9 +13,12 @@
     "@doclocalizer/core": "workspace:*",
     "@doclocalizer/ui": "workspace:*",
     "@git-diff-view/react": "^0.1.3",
+    "conf": "^15.1.0",
+    "diff": "^9.0.0",
     "electron": "^33.4.0",
     "electron-builder": "^26.0.12",
     "react": "^18.3.1",
+    "react-diff-viewer-continued": "^4.2.2",
     "react-dom": "^18.3.1",
     "sonner": "^1.7.4"
   },
