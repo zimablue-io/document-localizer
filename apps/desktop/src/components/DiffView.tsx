@@ -1,6 +1,6 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { diffWords } from 'diff'
 
 interface DiffViewProps {
@@ -8,9 +8,18 @@ interface DiffViewProps {
 	onApprove: () => void
 	onReject: () => void
 	onBack: () => void
+	onUpdateLocalizedText?: (paragraphIndex: number, newText: string) => void
+	onShiftLocalizedParagraph?: (paragraphIndex: number, direction: 'up' | 'down') => void
+	onInsertLocalizedParagraph?: (paragraphIndex: number, direction: 'above' | 'below') => void
+	onDeleteLocalizedParagraph?: (paragraphIndex: number) => void
 }
 
 type ViewMode = 'side-by-side' | 'list'
+
+interface EditState {
+	paragraphIndex: number
+	text: string
+}
 
 // LEFT COLUMN: Shows ONLY original text
 // - Removed words are highlighted in red (they were changed/removed)
@@ -39,16 +48,37 @@ function OriginalColumn({ origPara, locPara }: { origPara: string; locPara: stri
 	)
 }
 
-// RIGHT COLUMN: Shows ONLY localized text
-// - Added words are highlighted in green (they were added)
-// - Removed words are NOT shown (they don't exist in localized)
-function LocalizedColumn({ origPara, locPara }: { origPara: string; locPara: string }) {
+// RIGHT COLUMN: Shows ONLY localized text with optional edit capability
+function LocalizedColumn({
+	origPara,
+	locPara,
+	isEditing,
+	editText,
+	onTextChange,
+}: {
+	origPara: string
+	locPara: string
+	isEditing?: boolean
+	editText?: string
+	onTextChange?: (text: string) => void
+}) {
 	const diff = diffWords(origPara, locPara)
+
+	if (isEditing) {
+		return (
+			<textarea
+				className="w-full min-h-[80px] p-2 rounded bg-green-950/20 border border-green-900/30 font-mono text-sm resize-none"
+				value={editText}
+				onChange={(e) => onTextChange?.(e.target.value)}
+				autoFocus
+			/>
+		)
+	}
+
 	return (
 		<span className="font-mono text-sm leading-relaxed whitespace-pre-wrap break-words">
 			{diff.map((part, i) => {
 				if (part.added) {
-					// New word added - highlight in green
 					return (
 						<span key={i} className="bg-green-900/50 text-green-300 px-0.5 rounded-sm mx-[-1px]">
 							{part.value}
@@ -56,18 +86,17 @@ function LocalizedColumn({ origPara, locPara }: { origPara: string; locPara: str
 					)
 				}
 				if (part.removed) {
-					// This word was removed from original - skip it (doesn't exist in localized)
 					return null
 				}
-				// Unchanged text
 				return <span key={i}>{part.value}</span>
 			})}
 		</span>
 	)
 }
 
-export default function DiffViewComponent({ document, onApprove, onReject, onBack }: DiffViewProps) {
+export default function DiffViewComponent({ document, onApprove, onReject, onBack, onUpdateLocalizedText, onShiftLocalizedParagraph, onInsertLocalizedParagraph, onDeleteLocalizedParagraph }: DiffViewProps) {
 	const [viewMode, setViewMode] = useState<ViewMode>('side-by-side')
+	const [editingParagraph, setEditingParagraph] = useState<EditState | null>(null)
 
 	const originalText = document.markdown || ''
 	const localizedText = document.localizedText || ''
@@ -89,6 +118,34 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 
 	const changedParagraphs = paragraphChanges.filter((p) => p.hasChanges)
 	const changedCount = changedParagraphs.length
+
+	const handleStartEdit = useCallback((paragraphIndex: number, text: string) => {
+		setEditingParagraph({ paragraphIndex, text })
+	}, [])
+
+	const handleTextChange = useCallback((text: string) => {
+		setEditingParagraph((prev) => (prev ? { ...prev, text } : null))
+	}, [])
+
+	const handleSaveEdit = useCallback(() => {
+		if (editingParagraph && onUpdateLocalizedText) {
+			onUpdateLocalizedText(editingParagraph.paragraphIndex, editingParagraph.text)
+			setEditingParagraph(null)
+		}
+	}, [editingParagraph, onUpdateLocalizedText])
+
+	const handleCancelEdit = useCallback(() => {
+		setEditingParagraph(null)
+	}, [])
+
+	const handleDeleteParagraph = useCallback(
+		(paragraphIndex: number) => {
+			if (onDeleteLocalizedParagraph) {
+				onDeleteLocalizedParagraph(paragraphIndex)
+			}
+		},
+		[onDeleteLocalizedParagraph]
+	)
 
 	return (
 		<div className="flex flex-col h-full bg-background">
@@ -155,13 +212,96 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 									className="flex border-b border-border/30"
 									style={{ alignItems: 'stretch' }}
 								>
-									{/* Left: Original paragraph */}
+									{/* Left: Original paragraph with index */}
 									<div className="flex-1 p-4 border-r border-border/30">
+										<div className="flex items-center gap-2 mb-2">
+											<span className="px-2 py-0.5 text-xs font-mono bg-red-900/30 text-red-300 rounded">
+												#{index + 1}
+											</span>
+										</div>
 										<OriginalColumn origPara={origPara} locPara={locPara} />
 									</div>
-									{/* Right: Localized paragraph */}
-									<div className="flex-1 p-4">
-										<LocalizedColumn origPara={origPara} locPara={locPara} />
+									{/* Right: Localized paragraph - editable with all controls */}
+									<div className="flex-1 p-4 flex flex-col gap-2">
+										<div className="flex items-center justify-between">
+											<span className="px-2 py-0.5 text-xs font-mono bg-green-900/30 text-green-300 rounded">
+												#{index + 1}
+											</span>
+											<div className="flex items-center gap-1">
+												{editingParagraph?.paragraphIndex === index ? (
+													<>
+														<Button size="sm" variant="default" onClick={handleSaveEdit}>
+															Save
+														</Button>
+														<Button size="sm" variant="outline" onClick={handleCancelEdit}>
+															Cancel
+														</Button>
+													</>
+												) : (
+													<>
+														<button
+															onClick={() => onShiftLocalizedParagraph?.(index, 'up')}
+															disabled={index === 0}
+															className="p-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed"
+															title="Shift up"
+														>
+															<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+															</svg>
+														</button>
+														<button
+															onClick={() => onShiftLocalizedParagraph?.(index, 'down')}
+															disabled={index === paragraphChanges.length - 1}
+															className="p-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed"
+															title="Shift down"
+														>
+															<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+															</svg>
+														</button>
+														<button
+															onClick={() => onInsertLocalizedParagraph?.(index, 'above')}
+															className="px-2 py-1 rounded bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 text-xs"
+															title="Insert above"
+														>
+															+ Above
+														</button>
+														<button
+															onClick={() => onInsertLocalizedParagraph?.(index, 'below')}
+															className="px-2 py-1 rounded bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 text-xs"
+															title="Insert below"
+														>
+															+ Below
+														</button>
+														<button
+															onClick={() => handleStartEdit(index, locPara)}
+															className="p-1 rounded bg-green-900/30 hover:bg-green-800/50 text-green-300"
+															title="Edit this paragraph"
+														>
+															<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+															</svg>
+														</button>
+														<button
+															onClick={() => handleDeleteParagraph(index)}
+															className="p-1 rounded bg-red-900/30 hover:bg-red-800/50 text-red-300"
+															title="Delete paragraph"
+														>
+															<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+															</svg>
+														</button>
+													</>
+												)}
+											</div>
+										</div>
+										<LocalizedColumn
+											origPara={origPara}
+											locPara={locPara}
+											isEditing={editingParagraph?.paragraphIndex === index}
+											editText={editingParagraph?.paragraphIndex === index ? editingParagraph.text : undefined}
+											onTextChange={handleTextChange}
+										/>
 									</div>
 								</div>
 							))}
@@ -187,7 +327,16 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 										<div className="p-4">
 											<p className="text-xs text-green-400 mb-2">Localized</p>
 											<div className="p-3 rounded bg-green-950/20 border border-green-900/30">
-												<LocalizedColumn origPara={origPara} locPara={locPara} />
+												<LocalizedColumn
+													origPara={origPara}
+													locPara={locPara}
+													isEditing={editingParagraph?.paragraphIndex === index}
+													editText={editingParagraph?.paragraphIndex === index ? editingParagraph.text : undefined}
+													onStartEdit={() => handleStartEdit(index, locPara)}
+													onTextChange={handleTextChange}
+													onSave={handleSaveEdit}
+													onCancel={handleCancelEdit}
+												/>
 											</div>
 										</div>
 									</div>

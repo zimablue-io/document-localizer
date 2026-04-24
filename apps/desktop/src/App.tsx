@@ -1,53 +1,47 @@
 import type { DocumentState } from '@doclocalizer/core'
-import { chunkTextWithIndices, convertPdfToMarkdown, estimateContextSize } from '@doclocalizer/core'
+import { convertPdfToMarkdown, estimateContextSize } from '@doclocalizer/core'
 import { useCallback, useEffect, useState } from 'react'
 import { Toaster, toast } from 'sonner'
+import { formatError } from './lib/utils'
+import { ExportFormat, contentToPdf, getFileExtension } from './lib/export'
 import DiffView from './components/DiffView'
 import DocumentList from './components/DocumentList'
 import EmptyState from './components/EmptyState'
 import Header from './components/Header'
+import HistoryPanel from './components/HistoryPanel'
 import SettingsModal from './components/SettingsModal'
 
 const DEFAULT_API_URL = 'http://localhost:8080/v1'
 const DEFAULT_MODEL = 'llama:3.2:3b-instruct'
 
-const DEFAULT_PROMPT = `You are a professional document localizer specializing in preserving the original author's voice and intent.
+const DEFAULT_PROMPT = `STRICT LOCALIZATION RULES - FOLLOW EXACTLY:
 
-TRANSLATION RULES:
-1. PRESERVE SEMANTIC MEANING:
-   - Never simplify, generalize, or replace proper nouns (names, brand names, product names, place names)
-   - Example: "He drove a Cadillac" → "He drove a Cadillac" (NOT "He drove a car")
-   - Example: "The Eiffel Tower" → "The Eiffel Tower" (NOT "The famous tower")
+CRITICAL - THIS IS WORD REPLACEMENT ONLY:
+- You are NOT writing a story. You are NOT being creative. You are ONLY replacing words.
+- NEVER invent, add, remove, or modify any content beyond word-level changes
+- NEVER change sentence structure, punctuation, or paragraph structure
+- NEVER add dialogue, descriptions, or narrative that wasn't in the original
+- The text you output MUST contain EXACTLY the same words as the input, just with spelling/word replacements
 
-2. PRESERVE CHARACTER VOICE AND SPEECH STYLES:
-   - NEVER correct typos, misspellings, or grammatical errors that are intentional character traits
-   - Example: "Excuse pleess" → "Excuse pleess" (NOT "Excuse me") - preserve the character's speech pattern
-   - Example: "I don't know nothing" → "I don't know nothing" - preserve the character's dialect/grammar
-   - Example: "He be talkin" → "He be talkin" - preserve AAVE or other dialectal speech patterns
-   - Example: "Y'all" → "Y'all" - preserve regional/colloquial speech
-   - Preserve ALL dialogue exactly as written, including speech quirks, stutters, accents represented in text
-   - If a character's speech is informal, broken, or "incorrect" in the source, preserve that quality
+TARGET LOCALE CONVERSIONS ONLY:
+- color → colour (or vice versa depending on target)
+- honor → honour (or vice versa)
+- Words like "mom", "dad", "football", "soccer" → use the target locale equivalent
+- Only make changes that match the target locale's spelling/word conventions
 
-3. PRESERVE STRUCTURE:
-   - Keep paragraph breaks exactly as in the original
-   - Preserve ALL markdown formatting (headings, bold, italic, quotes, dialogue, lists)
-
-4. CULTURAL CONTEXT:
-   - Maintain culturally specific references, idioms, and expressions
-   - Adapt only when necessary for comprehension, never replace meaning
-
-5. CONSISTENCY:
-   - If a term appears multiple times, translate it the same way each time
-   - Use formal register for technical content, match the original's formality
-
-6. NO DUPLICATION:
-   - Each paragraph should appear exactly once in the output
-   - Never repeat content that already appeared earlier
+PRESERVE EVERYTHING EXACTLY:
+- Keep every single word from the original
+- Keep all punctuation exactly as written
+- Keep all paragraph breaks exactly as in the original
+- Keep all dialogue exactly as written - do NOT add speech tags like "he said" or "she whispered"
+- Keep all capitalization exactly as in the original
+- Keep all sentence structure exactly as in the original
+- If a word has no locale-specific alternative, leave it EXACTLY as is
 
 OUTPUT FORMAT:
-- Return ONLY the translated text
-- NO markers, comments, explanations, or quotes around the output
-- No leading/trailing whitespace
+- Output EXACTLY one paragraph of text
+- NO markers, NO comments, NO explanations
+- NO leading/trailing whitespace
 
 ---BEGIN TEXT---
 {text}
@@ -118,6 +112,28 @@ interface HistoryEntry {
 	chunksProcessed?: number
 }
 
+interface PersistedDocument {
+	id: string
+	name: string
+	path: string
+	status: 'idle' | 'parsing' | 'localizing' | 'paused' | 'review' | 'approved' | 'error'
+	markdown?: string
+	localizedText?: string
+	error?: string
+}
+
+function toPersistedDocument(doc: DocumentState): PersistedDocument {
+	return {
+		id: doc.id,
+		name: doc.name,
+		path: doc.path,
+		status: doc.status,
+		markdown: doc.markdown,
+		localizedText: doc.localizedText,
+		error: doc.error,
+	}
+}
+
 async function readPdfFile(filePath: string): Promise<Uint8Array> {
 	const base64 = await window.electron.readFile(filePath)
 	const binaryString = atob(base64)
@@ -142,6 +158,7 @@ export default function App() {
 	const [documents, setDocuments] = useState<DocumentState[]>([])
 	const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
 	const [showSettings, setShowSettings] = useState(false)
+	const [showHistory, setShowHistory] = useState(false)
 	const [settings, setSettings] = useState<Settings | null>(null)
 	const [history, setHistory] = useState<HistoryEntry[]>([])
 	const [isLoading, setIsLoading] = useState(true)
@@ -157,6 +174,11 @@ export default function App() {
 
 				const loadedHistory = await window.electron.getHistory()
 				setHistory(loadedHistory)
+
+				const loadedDocuments = await window.electron.loadDocuments()
+				if (loadedDocuments && Array.isArray(loadedDocuments)) {
+					setDocuments(loadedDocuments as DocumentState[])
+				}
 			} finally {
 				setIsLoading(false)
 			}
@@ -164,17 +186,14 @@ export default function App() {
 		void init()
 	}, [])
 
+	// Persist documents when they change
 	useEffect(() => {
-		if (!settings) return
-		window.electron
-			.testConnection?.(`${settings.apiUrl}/models`)
-			.then((result: unknown) => {
-				console.log('[App] Connection test result:', result)
-			})
-			.catch((err: unknown) => {
-				console.error('[App] Connection test error:', err)
-			})
-	}, [settings?.apiUrl])
+		if (isLoading) return
+		const persisted = documents.map(toPersistedDocument)
+		void window.electron.saveDocuments(persisted)
+	}, [documents, isLoading])
+
+	// Connection test removed - errors show when processing starts instead
 
 	const isConfigured = settings?.apiUrl && settings?.model && settings?.targetLocale
 
@@ -253,8 +272,8 @@ export default function App() {
 					markdown = await readTextFile(doc.path)
 				}
 
-				const chunkResult = chunkTextWithIndices(markdown, parseInt(settings!.chunkSize, 10), parseInt(settings!.overlapSize, 10))
-				const chunks = chunkResult.chunks
+				// Split markdown into paragraphs - one paragraph per API call
+				const paragraphs = markdown.split(/\n\n+/).filter((p) => p.trim())
 				const localizedPath = doc.path.replace(/\.pdf$/i, '.localized.md').replace(/\.md$/i, '.localized.md')
 				await window.electron.writeTextFile(localizedPath, '')
 
@@ -264,20 +283,21 @@ export default function App() {
 							? {
 									...d,
 									status: 'localizing',
-									progress: { current: 0, total: chunks.length, phase: 'localizing' },
+									progress: { current: 0, total: paragraphs.length, phase: 'localizing' },
 								}
 							: d
 					)
 				)
 
 				const promptTemplate = settings!.customPrompt || DEFAULT_PROMPT
-				const localizedChunks: string[] = []
+				// Process ONE paragraph at a time - no chunking, no overlap, no dedup needed
+				const localizedParagraphs: string[] = []
 
 				// Check for resume from pause
 				const resumeFrom = pausedChunkIndex[id]
 				const startIndex = resumeFrom !== undefined ? resumeFrom : 0
 
-				for (let i = startIndex; i < chunks.length; i++) {
+				for (let i = startIndex; i < paragraphs.length; i++) {
 					// Check current status by reading from state via setDocuments callback
 					let shouldContinue = true
 					setDocuments((prev) => {
@@ -288,16 +308,17 @@ export default function App() {
 						}
 						return prev.map((d) =>
 							d.id === id
-								? { ...d, progress: { current: i + 1, total: chunks.length, phase: 'localizing' } }
+								? { ...d, progress: { current: i + 1, total: paragraphs.length, phase: 'localizing' } }
 								: d
 						)
 					})
 
 					if (!shouldContinue) break
 
+					// Send ONLY this single paragraph to the LLM
 					const userContent = promptTemplate
 						.replace('{locale}', settings!.targetLocale)
-						.replace('{text}', chunks[i])
+						.replace('{text}', paragraphs[i])
 
 					const result = await window.electron.generateAI({
 						url: `${settings!.apiUrl}/chat/completions`,
@@ -336,17 +357,19 @@ export default function App() {
 						content = content.slice(0, endMarker)
 					}
 
-					// Remove any leading commentary like "Here's the translation..." or "Translate the text above..."
+					// Remove any leading commentary
 					content = content.replace(/^Here'?s? (?:the )?translation[.:].*/i, '').trim()
 					content = content.replace(/^Translate the text above.*/i, '').trim()
-					// Remove "Here is the translation of..." variations
 					content = content.replace(/^Here(?:'|)s?.*translation.*/i, '').trim()
 
 					// Remove trailing newlines
 					content = content.trim()
 
-					localizedChunks.push(content)
-					await window.electron.writeTextFile(localizedPath, localizedChunks.join('\n\n'))
+					// Store result directly - no dedup needed since we process one paragraph at a time
+					localizedParagraphs.push(content)
+
+					// Write intermediate result
+					await window.electron.writeTextFile(localizedPath, localizedParagraphs.join('\n\n'))
 				}
 
 				setDocuments((prev) =>
@@ -356,7 +379,7 @@ export default function App() {
 									...d,
 									status: 'review',
 									markdown,
-									localizedText: localizedChunks.join('\n\n'),
+									localizedText: localizedParagraphs.join('\n\n'),
 									progress: undefined,
 								}
 							: d
@@ -368,7 +391,7 @@ export default function App() {
 				if (historyEntry?.id) {
 					await window.electron.updateHistory(historyEntry.id, {
 						status: 'processed',
-						chunksProcessed: chunks.length,
+						chunksProcessed: paragraphs.length,
 					})
 				}
 			} catch (err) {
@@ -376,7 +399,8 @@ export default function App() {
 				setDocuments((prev) =>
 					prev.map((d) => (d.id === id ? { ...d, status: 'error', error, progress: undefined } : d))
 				)
-				toast.error(`Failed to process ${doc.name}: ${error}`)
+				const cleanError = formatError(err)
+				toast.error(`Failed to process ${doc.name}: ${cleanError}`)
 
 				// Update history entry with error
 				if (historyEntry?.id) {
@@ -449,6 +473,11 @@ export default function App() {
 		toast.success('Settings saved')
 	}, [settings])
 
+	const handleClearHistory = useCallback(async () => {
+		await window.electron.clearHistory()
+		setHistory([])
+	}, [])
+
 	const handleApprove = useCallback(async () => {
 		const doc = documents.find((d) => d.id === selectedDocId)
 		setDocuments((prev) => prev.map((d) => (d.id === selectedDocId ? { ...d, status: 'approved' } : d)))
@@ -482,6 +511,144 @@ export default function App() {
 		}
 	}, [selectedDocId, documents])
 
+	const handleUpdateLocalizedText = useCallback(
+		(paragraphIndex: number, newText: string) => {
+			setDocuments((prev) =>
+				prev.map((d) => {
+					if (d.id !== selectedDocId) return d
+
+					const paragraphs = (d.localizedText || '').split(/\n\n+/)
+					paragraphs[paragraphIndex] = newText
+
+					return {
+						...d,
+						localizedText: paragraphs.join('\n\n'),
+					}
+				})
+			)
+			toast.success('Paragraph updated')
+		},
+		[selectedDocId]
+	)
+
+	const handleShiftLocalizedParagraph = useCallback(
+		(paragraphIndex: number, direction: 'up' | 'down') => {
+			setDocuments((prev) =>
+				prev.map((d) => {
+					if (d.id !== selectedDocId) return d
+
+					const paragraphs = (d.localizedText || '').split(/\n\n+/)
+					const swapIndex = direction === 'up' ? paragraphIndex - 1 : paragraphIndex + 1
+
+					// Check bounds
+					if (swapIndex < 0 || swapIndex >= paragraphs.length) {
+						return d
+					}
+
+					// Swap paragraphs
+					const temp = paragraphs[paragraphIndex]
+					paragraphs[paragraphIndex] = paragraphs[swapIndex]
+					paragraphs[swapIndex] = temp
+
+					return {
+						...d,
+						localizedText: paragraphs.join('\n\n'),
+					}
+				})
+			)
+			toast.success(`Paragraph shifted ${direction}`)
+		},
+		[selectedDocId]
+	)
+
+	const handleInsertLocalizedParagraph = useCallback(
+		(paragraphIndex: number, direction: 'above' | 'below') => {
+			setDocuments((prev) =>
+				prev.map((d) => {
+					if (d.id !== selectedDocId) return d
+
+					const paragraphs = (d.localizedText || '').split(/\n\n+/)
+					const insertAt = direction === 'above' ? paragraphIndex : paragraphIndex + 1
+					paragraphs.splice(insertAt, 0, '[New paragraph - edit this]')
+
+					return {
+						...d,
+						localizedText: paragraphs.join('\n\n'),
+					}
+				})
+			)
+			toast.success(`Paragraph inserted ${direction}`)
+		},
+		[selectedDocId]
+	)
+
+	const handleDeleteLocalizedParagraph = useCallback(
+		(paragraphIndex: number) => {
+			setDocuments((prev) =>
+				prev.map((d) => {
+					if (d.id !== selectedDocId) return d
+
+					const paragraphs = (d.localizedText || '').split(/\n\n+/)
+					if (paragraphs.length <= 1) {
+						toast.error('Cannot delete - document must have at least one paragraph')
+						return d
+					}
+					paragraphs.splice(paragraphIndex, 1)
+
+					return {
+						...d,
+						localizedText: paragraphs.join('\n\n'),
+					}
+				})
+			)
+			toast.success('Paragraph deleted')
+		},
+		[selectedDocId]
+	)
+
+	const handleExport = useCallback(
+		async (id: string, format: ExportFormat) => {
+			const doc = documents.find((d) => d.id === id)
+			if (!doc) {
+				toast.error('Document not found')
+				return
+			}
+			if (!doc.localizedText) {
+				toast.error('No localized text to export')
+				return
+			}
+
+			try {
+				const baseFilename = doc.name.replace(/\.[^.]+$/, '')
+				const extension = getFileExtension(format)
+				const defaultFilename = `${baseFilename}.localized${extension}`
+
+				const savePath = await window.electron.saveFile({
+					defaultPath: defaultFilename,
+					filters: [format === 'pdf' ? { name: 'PDF', extensions: ['pdf'] } : { name: 'Markdown', extensions: ['md'] }],
+				})
+
+				if (!savePath) {
+					return
+				}
+
+				if (format === 'pdf') {
+					const pdfBlob = contentToPdf(doc.localizedText, baseFilename)
+					const arrayBuffer = await pdfBlob.arrayBuffer()
+					const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+					await window.electron.writeBase64File(savePath, base64)
+				} else {
+					await window.electron.writeTextFile(savePath, doc.localizedText)
+				}
+				toast.success(`Exported to ${savePath}`)
+			} catch (err) {
+				const cleanError = formatError(err)
+				toast.error(`Export failed: ${cleanError}`)
+			}
+		},
+		[documents]
+	)
+
 	const selectedDoc = documents.find((d) => d.id === selectedDocId)
 
 	// Loading state
@@ -498,7 +665,7 @@ export default function App() {
 
 	return (
 		<div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
-			<Toaster position="top-right" richColors closeButton />
+			<Toaster position="bottom-right" richColors closeButton />
 
 			<Header
 				documents={documents}
@@ -506,6 +673,7 @@ export default function App() {
 				onSelectFiles={handleSelectFiles}
 				onProcessAll={handleProcessAll}
 				onOpenSettings={() => setShowSettings(true)}
+				onOpenHistory={() => setShowHistory(true)}
 			/>
 
 			<main className="flex-1 p-6 overflow-auto">
@@ -515,6 +683,10 @@ export default function App() {
 						onApprove={handleApprove}
 						onReject={handleReject}
 						onBack={() => setSelectedDocId(null)}
+						onUpdateLocalizedText={handleUpdateLocalizedText}
+						onShiftLocalizedParagraph={handleShiftLocalizedParagraph}
+						onInsertLocalizedParagraph={handleInsertLocalizedParagraph}
+						onDeleteLocalizedParagraph={handleDeleteLocalizedParagraph}
 					/>
 				)}
 
@@ -530,6 +702,7 @@ export default function App() {
 						onPause={handlePause}
 						onResume={handleResume}
 						onFilesAdded={addFilesToDocuments}
+						onExport={handleExport}
 					/>
 				)}
 			</main>
@@ -542,6 +715,13 @@ export default function App() {
 					onClose={() => setShowSettings(false)}
 				/>
 			)}
+
+			<HistoryPanel
+				history={history}
+				isOpen={showHistory}
+				onClose={() => setShowHistory(false)}
+				onClear={handleClearHistory}
+			/>
 		</div>
 	)
 }

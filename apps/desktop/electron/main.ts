@@ -93,12 +93,26 @@ ipcMain.handle('dialog:openFile', async (_event, options) => {
 	return result.canceled ? null : result.filePaths
 })
 
+ipcMain.handle('dialog:saveFile', async (_event, options) => {
+	if (!mainWindow) return null
+	const result = await dialog.showSaveDialog(mainWindow, {
+		filters: [{ name: 'Markdown', extensions: ['md'] }],
+		...options,
+	})
+	return result.canceled ? null : result.filePath
+})
+
 ipcMain.handle('fs:readTextFile', async (_event, filePath) => {
 	return fs.readFileSync(filePath, 'utf-8')
 })
 
 ipcMain.handle('fs:writeTextFile', async (_event, filePath, content) => {
 	fs.writeFileSync(filePath, content, 'utf-8')
+})
+
+ipcMain.handle('fs:writeBase64File', async (_event, filePath, base64) => {
+	const buffer = Buffer.from(base64, 'base64')
+	fs.writeFileSync(filePath, buffer)
 })
 
 ipcMain.handle('fs:readFile', async (_event, filePath) => {
@@ -244,6 +258,44 @@ ipcMain.handle('history:clear', async () => {
 	}
 })
 
+// Documents persistence using JSON file
+const documentsFilePath = path.join(app.getPath('userData'), 'documents.json')
+
+interface PersistedDocument {
+	id: string
+	name: string
+	path: string
+	status: 'idle' | 'parsing' | 'localizing' | 'paused' | 'review' | 'approved' | 'error'
+	markdown?: string
+	localizedText?: string
+	error?: string
+}
+
+ipcMain.handle('documents:load', async () => {
+	try {
+		ensureUserDataDir()
+		if (fs.existsSync(documentsFilePath)) {
+			const data = fs.readFileSync(documentsFilePath, 'utf-8')
+			return JSON.parse(data)
+		}
+	} catch (e) {
+		log('Error loading documents:', e)
+	}
+	return []
+})
+
+ipcMain.handle('documents:save', async (_event, documents: PersistedDocument[]) => {
+	try {
+		ensureUserDataDir()
+		fs.writeFileSync(documentsFilePath, JSON.stringify(documents, null, 2), 'utf-8')
+		log('Documents saved to:', documentsFilePath)
+		return true
+	} catch (e) {
+		log('Error saving documents:', e)
+		return false
+	}
+})
+
 // AI Generation using Electron's net.fetch (Chromium networking)
 ipcMain.handle(
 	'ai:generate',
@@ -288,7 +340,19 @@ ipcMain.handle(
 			return { content, status: 200 }
 		} catch (e) {
 			log('Error:', e)
-			return { content: '', error: e instanceof Error ? e.message : String(e) }
+			const errorMessage = e instanceof Error ? e.message : String(e)
+			// Clean up Chrome network errors for better UX
+			let userMessage = errorMessage
+			if (errorMessage.includes('ERR_EMPTY_RESPONSE')) {
+				userMessage = 'Server did not respond. Please check if your AI server is running.'
+			} else if (errorMessage.includes('ERR_CONNECTION_REFUSED')) {
+				userMessage = 'Could not connect to server. Please verify your API URL in settings.'
+			} else if (errorMessage.includes('ERR_CONNECTION_TIMED_OUT')) {
+				userMessage = 'Connection timed out. The server may be busy or unreachable.'
+			} else if (errorMessage.includes('net::ERR_')) {
+				userMessage = `Connection error: ${errorMessage.replace('net::ERR_', '').replace(/_/g, ' ').toLowerCase()}`
+			}
+			return { content: '', error: userMessage }
 		}
 	}
 )

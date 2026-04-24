@@ -1,9 +1,11 @@
 export interface ElectronAPI {
 	openFile: (options?: { multiple?: boolean }) => Promise<string[] | null>
+	saveFile: (options?: { defaultPath?: string; filters?: { name: string; extensions: string[] }[] }) => Promise<string | null>
 
 	getDroppedFilePaths: (files: File[]) => string[]
 	readTextFile: (filePath: string) => Promise<string>
 	writeTextFile: (filePath: string, content: string) => Promise<void>
+	writeBase64File: (filePath: string, base64: string) => Promise<void>
 	readFile: (filePath: string) => Promise<string>
 	parsePdf: (filePath: string) => Promise<{ base64: string; size: number }>
 	log: (message: string) => Promise<void>

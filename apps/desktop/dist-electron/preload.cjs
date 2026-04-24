@@ -3,11 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 electron_1.contextBridge.exposeInMainWorld('electron', {
     openFile: (options) => electron_1.ipcRenderer.invoke('dialog:openFile', options),
+    saveFile: (options) => electron_1.ipcRenderer.invoke('dialog:saveFile', options),
     getDroppedFilePaths: (files) => {
         return files.map((file) => electron_1.webUtils.getPathForFile(file));
     },
     readTextFile: (filePath) => electron_1.ipcRenderer.invoke('fs:readTextFile', filePath),
     writeTextFile: (filePath, content) => electron_1.ipcRenderer.invoke('fs:writeTextFile', filePath, content),
+    writeBase64File: (filePath, base64) => electron_1.ipcRenderer.invoke('fs:writeBase64File', filePath, base64),
     readFile: (filePath) => electron_1.ipcRenderer.invoke('fs:readFile', filePath),
     parsePdf: (filePath) => electron_1.ipcRenderer.invoke('pdf:parse', filePath),
     log: (message) => electron_1.ipcRenderer.invoke('log', message),
@@ -19,4 +21,6 @@ electron_1.contextBridge.exposeInMainWorld('electron', {
     addHistory: (entry) => electron_1.ipcRenderer.invoke('history:add', entry),
     updateHistory: (id, updates) => electron_1.ipcRenderer.invoke('history:update', id, updates),
     clearHistory: () => electron_1.ipcRenderer.invoke('history:clear'),
+    loadDocuments: () => electron_1.ipcRenderer.invoke('documents:load'),
+    saveDocuments: (documents) => electron_1.ipcRenderer.invoke('documents:save', documents),
 });

@@ -3,6 +3,9 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 contextBridge.exposeInMainWorld('electron', {
 	openFile: (options?: { multiple?: boolean }) => ipcRenderer.invoke('dialog:openFile', options),
 
+	saveFile: (options?: { defaultPath?: string; filters?: { name: string; extensions: string[] }[] }) =>
+		ipcRenderer.invoke('dialog:saveFile', options),
+
 	getDroppedFilePaths: (files: File[]) => {
 		return files.map((file) => webUtils.getPathForFile(file))
 	},
@@ -10,6 +13,8 @@ contextBridge.exposeInMainWorld('electron', {
 	readTextFile: (filePath: string) => ipcRenderer.invoke('fs:readTextFile', filePath),
 
 	writeTextFile: (filePath: string, content: string) => ipcRenderer.invoke('fs:writeTextFile', filePath, content),
+
+	writeBase64File: (filePath: string, base64: string) => ipcRenderer.invoke('fs:writeBase64File', filePath, base64),
 
 	readFile: (filePath: string) => ipcRenderer.invoke('fs:readFile', filePath),
 
@@ -32,4 +37,8 @@ contextBridge.exposeInMainWorld('electron', {
 	updateHistory: (id: string, updates: object) => ipcRenderer.invoke('history:update', id, updates),
 
 	clearHistory: () => ipcRenderer.invoke('history:clear'),
+
+	loadDocuments: () => ipcRenderer.invoke('documents:load'),
+
+	saveDocuments: (documents: object) => ipcRenderer.invoke('documents:save', documents),
 })

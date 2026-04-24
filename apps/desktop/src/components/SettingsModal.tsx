@@ -31,13 +31,34 @@ interface Settings {
 	customPrompt?: string
 }
 
-const DEFAULT_PROMPT = `Translate the following markdown text to {locale}.
+const DEFAULT_PROMPT = `STRICT LOCALIZATION RULES - FOLLOW EXACTLY:
 
-CRITICAL RULES:
-1. Preserve EXACTLY the same paragraph structure - keep blank lines between paragraphs
-2. Preserve ALL markdown formatting (headings, bold, italic, quotes, dialogue, etc.)
-3. ONLY translate the text content, never modify the structure
-4. Return ONLY the translated text - NO markers, comments, or explanations
+CRITICAL - THIS IS WORD REPLACEMENT ONLY:
+- You are NOT writing a story. You are NOT being creative. You are ONLY replacing words.
+- NEVER invent, add, remove, or modify any content beyond word-level changes
+- NEVER change sentence structure, punctuation, or paragraph structure
+- NEVER add dialogue, descriptions, or narrative that wasn't in the original
+- The text you output MUST contain EXACTLY the same words as the input, just with spelling/word replacements
+
+TARGET LOCALE CONVERSIONS ONLY:
+- color → colour (or vice versa depending on target)
+- honor → honour (or vice versa)
+- Words like "mom", "dad", "football", "soccer" → use the target locale equivalent
+- Only make changes that match the target locale's spelling/word conventions
+
+PRESERVE EVERYTHING EXACTLY:
+- Keep every single word from the original
+- Keep all punctuation exactly as written
+- Keep all paragraph breaks exactly as in the original
+- Keep all dialogue exactly as written - do NOT add speech tags like "he said" or "she whispered"
+- Keep all capitalization exactly as in the original
+- Keep all sentence structure exactly as in the original
+- If a word has no locale-specific alternative, leave it EXACTLY as is
+
+OUTPUT FORMAT:
+- Output EXACTLY one paragraph of text
+- NO markers, NO comments, NO explanations
+- NO leading/trailing whitespace
 
 ---BEGIN TEXT---
 {text}

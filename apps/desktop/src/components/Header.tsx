@@ -1,5 +1,6 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
+import { History } from 'lucide-react'
 
 interface HeaderProps {
 	documents: DocumentState[]
@@ -7,9 +8,10 @@ interface HeaderProps {
 	onSelectFiles: () => void
 	onProcessAll: () => void
 	onOpenSettings: () => void
+	onOpenHistory: () => void
 }
 
-export default function Header({ documents, isConfigured, onSelectFiles, onProcessAll, onOpenSettings }: HeaderProps) {
+export default function Header({ documents, isConfigured, onSelectFiles, onProcessAll, onOpenSettings, onOpenHistory }: HeaderProps) {
 	const idleCount = documents.filter((d) => d.status === 'idle').length
 
 	return (
@@ -31,6 +33,9 @@ export default function Header({ documents, isConfigured, onSelectFiles, onProce
 						</Button>
 					</>
 				)}
+				<Button variant="ghost" size="icon" onClick={onOpenHistory} aria-label="History">
+					<History className="w-5 h-5" />
+				</Button>
 				<Button variant="ghost" size="icon" onClick={onOpenSettings} aria-label="Settings">
 					<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
 						<path
