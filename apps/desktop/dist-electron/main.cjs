@@ -227,8 +227,6 @@ electron_1.ipcMain.handle('history:clear', async () => {
         return false;
     }
 });
-// Documents persistence using JSON file
-const documentsFilePath = node_path_1.default.join(electron_1.app.getPath('userData'), 'documents.json');
 electron_1.ipcMain.handle('uploaded:load', async () => {
     try {
         ensureUserDataDir();

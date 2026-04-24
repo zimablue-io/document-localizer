@@ -52,18 +52,33 @@ Renderer accesses via `window.electron.*` (defined in `electron/preload.ts`)
 
 - Settings stored in: `~/Library/Application Support/document-localizer/settings.json`
 - History stored in: `~/Library/Application Support/document-localizer/history.json`
-- Documents stored in: `~/Library/Application Support/document-localizer/documents.json`
+- Source documents (Uploaded) stored in: `~/Library/Application Support/document-localizer/uploaded.json`
+- Active tasks stored in: `~/Library/Application Support/document-localizer/tasks.json`
+- Processed outputs stored in: `~/Library/Application Support/document-localizer/processed.json`
 - MAX_HISTORY_ITEMS: 100
+
+### Three-Tab Architecture
+
+The app uses three separate lists to track documents:
+
+1. **Uploaded (Source Library)**: Permanent inventory of uploaded source files. These never change - user sets locale and clicks Process to create a new output.
+
+2. **Tasks (Active Processing)**: Shows items currently being processed (parsing, localizing, paused) or awaiting review (review status). When processing completes, item moves here for user review.
+
+3. **Processed (Completed Outputs)**: Shows approved/rejected/exported/error outputs. User can export approved items or retry errors.
 
 ### Processing Flow
 
-1. User selects files via native file dialog (PDF or .md)
-2. For PDF: Base64 encoded data sent to frontend → `pdfjs-dist` parses in renderer
-3. For .md: Files read directly via IPC
-4. Frontend splits markdown into chunks with overlap
-5. Each chunk sent to AI for localization (via `ai:generate` IPC)
-6. Results combined and shown in diff view
-7. User approves/rejects before export
+1. User uploads files via native file dialog (PDF or .md) → files added to Uploaded tab
+2. User selects source/target locales for each file
+3. User clicks "Process" → creates NEW output entry in Tasks tab
+4. For PDF: Base64 encoded data sent to frontend → `pdfjs-dist` parses in renderer
+5. For .md: Files read directly via IPC
+6. Frontend splits markdown into chunks
+7. Each chunk sent to AI for localization (via `ai:generate` IPC)
+8. Results combined and shown in diff view (accessible via "Review" button)
+9. User approves/rejects → moves to Processed tab
+10. User can export approved items, or retry errored items
 
 ## Running the App
 

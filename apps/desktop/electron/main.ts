@@ -258,9 +258,7 @@ ipcMain.handle('history:clear', async () => {
 	}
 })
 
-// Documents persistence using JSON file
-const documentsFilePath = path.join(app.getPath('userData'), 'documents.json')
-
+// Document interfaces for persistence
 // Uploaded documents - original files user uploaded
 interface UploadedDocument {
 	id: string

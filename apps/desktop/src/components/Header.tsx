@@ -1,4 +1,3 @@
-import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
 import { ChevronDown, History, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'

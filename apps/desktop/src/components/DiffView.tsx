@@ -1,4 +1,3 @@
-import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
 import { diffWords } from 'diff'
 import { useCallback, useState } from 'react'
