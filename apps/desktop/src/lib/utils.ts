@@ -1,11 +1,64 @@
 export function formatError(error: unknown, fallbackMessage = 'Something went wrong'): string {
 	if (typeof error === 'string') {
+		// Handle case-insensitive Chrome network errors
+		const upperMsg = error.toUpperCase()
+		if (upperMsg.includes('ERR_EMPTY_RESPONSE')) {
+			return 'Server did not respond. Please check if your AI server is running.'
+		}
+		if (upperMsg.includes('ERR_CONNECTION_REFUSED')) {
+			return 'Could not connect to server. Please verify your API URL in settings.'
+		}
+		if (upperMsg.includes('ERR_CONNECTION_TIMED_OUT')) {
+			return 'Connection timed out. The server may be busy or unreachable.'
+		}
+		if (upperMsg.includes('ERR_NAME_NOT_RESOLVED')) {
+			return 'Server not found. Please check your API URL.'
+		}
+		if (upperMsg.includes('ERR_INTERNET_DISCONNECTED')) {
+			return 'No internet connection.'
+		}
+		if (upperMsg.includes('NET::ERR_')) {
+			const match = error.match(/net::(err_\w+)/i)
+			if (match) {
+				const code = match[1].replace('err_', '').replace(/_/g, ' ')
+				return `Connection error: ${code}`
+			}
+		}
 		return error
 	}
 
 	if (error instanceof Error) {
-		// Clean up common AI API error patterns
 		const message = error.message
+
+		// Handle Chrome network errors with case-insensitive check
+		const upperMsg = message.toUpperCase()
+		if (upperMsg.includes('ERR_EMPTY_RESPONSE')) {
+			return 'Server did not respond. Please check if your AI server is running.'
+		}
+		if (upperMsg.includes('ERR_CONNECTION_REFUSED')) {
+			return 'Could not connect to server. Please verify your API URL in settings.'
+		}
+		if (upperMsg.includes('ERR_CONNECTION_TIMED_OUT')) {
+			return 'Connection timed out. The server may be busy or unreachable.'
+		}
+		if (upperMsg.includes('ERR_NAME_NOT_RESOLVED')) {
+			return 'Server not found. Please check your API URL.'
+		}
+		if (upperMsg.includes('ERR_INTERNET_DISCONNECTED')) {
+			return 'No internet connection.'
+		}
+		if (upperMsg.includes('NET::ERR_')) {
+			const match = message.match(/net::(err_\w+)/i)
+			if (match) {
+				const code = match[1].replace('err_', '').replace(/_/g, ' ')
+				return `Connection error: ${code}`
+			}
+		}
+
+		// Handle common HTTP errors
+		if (message.match(/^HTTP \d+: /)) {
+			return message.replace(/^HTTP \d+: /, '').substring(0, 200)
+		}
 
 		// Remove JSON parsing artifacts
 		if (message.includes('{') && message.includes('}')) {
@@ -14,11 +67,6 @@ export function formatError(error: unknown, fallbackMessage = 'Something went wr
 				.replace(/\s+/g, ' ')
 				.trim()
 			if (cleaned.length > 10) return cleaned
-		}
-
-		// Handle common HTTP errors
-		if (message.match(/^HTTP \d+: /)) {
-			return message.replace(/^HTTP \d+: /, '').substring(0, 200)
 		}
 
 		// Truncate long messages

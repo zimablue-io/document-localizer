@@ -147,7 +147,7 @@ export default function DocumentList({
 										{getStatusIcon(doc.status)}
 										<div>
 											<p className="font-medium text-base">{doc.name}</p>
-											{doc.error && (
+											{doc.error && doc.status === 'error' && (
 												<p className="text-sm text-red-500 mt-0.5">{doc.error}</p>
 											)}
 										</div>

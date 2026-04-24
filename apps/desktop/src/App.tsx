@@ -195,7 +195,7 @@ export default function App() {
 
 	// Connection test removed - errors show when processing starts instead
 
-	const isConfigured = settings?.apiUrl && settings?.model && settings?.targetLocale
+	const isConfigured = settings?.apiUrl && settings?.model
 
 	const addFilesToDocuments = useCallback(
 		(paths: string[]) => {
@@ -395,18 +395,17 @@ export default function App() {
 					})
 				}
 			} catch (err) {
-				const error = err instanceof Error ? err.message : 'Unknown error'
-				setDocuments((prev) =>
-					prev.map((d) => (d.id === id ? { ...d, status: 'error', error, progress: undefined } : d))
-				)
 				const cleanError = formatError(err)
+				setDocuments((prev) =>
+					prev.map((d) => (d.id === id ? { ...d, status: 'error', error: cleanError, progress: undefined } : d))
+				)
 				toast.error(`Failed to process ${doc.name}: ${cleanError}`)
 
 				// Update history entry with error
 				if (historyEntry?.id) {
 					await window.electron.updateHistory(historyEntry.id, {
 						status: 'error',
-						errorMessage: error,
+						errorMessage: cleanError,
 					})
 				}
 			}
@@ -480,7 +479,7 @@ export default function App() {
 
 	const handleApprove = useCallback(async () => {
 		const doc = documents.find((d) => d.id === selectedDocId)
-		setDocuments((prev) => prev.map((d) => (d.id === selectedDocId ? { ...d, status: 'approved' } : d)))
+		setDocuments((prev) => prev.map((d) => (d.id === selectedDocId ? { ...d, status: 'approved', error: undefined } : d)))
 		setSelectedDocId(null)
 		toast.success('Document approved')
 
@@ -669,6 +668,8 @@ export default function App() {
 
 			<Header
 				documents={documents}
+				model={settings?.model}
+				apiUrl={settings?.apiUrl}
 				isConfigured={!!isConfigured}
 				onSelectFiles={handleSelectFiles}
 				onProcessAll={handleProcessAll}

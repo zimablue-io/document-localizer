@@ -341,6 +341,7 @@ ipcMain.handle(
 		} catch (e) {
 			log('Error:', e)
 			const errorMessage = e instanceof Error ? e.message : String(e)
+			log('Error message details:', JSON.stringify(e))
 			// Clean up Chrome network errors for better UX
 			let userMessage = errorMessage
 			if (errorMessage.includes('ERR_EMPTY_RESPONSE')) {
@@ -352,6 +353,7 @@ ipcMain.handle(
 			} else if (errorMessage.includes('net::ERR_')) {
 				userMessage = `Connection error: ${errorMessage.replace('net::ERR_', '').replace(/_/g, ' ').toLowerCase()}`
 			}
+			log('User-facing error:', userMessage)
 			return { content: '', error: userMessage }
 		}
 	}

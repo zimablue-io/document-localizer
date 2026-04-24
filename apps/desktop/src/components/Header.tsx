@@ -4,6 +4,8 @@ import { History } from 'lucide-react'
 
 interface HeaderProps {
 	documents: DocumentState[]
+	model?: string
+	apiUrl?: string
 	isConfigured: boolean
 	onSelectFiles: () => void
 	onProcessAll: () => void
@@ -11,12 +13,26 @@ interface HeaderProps {
 	onOpenHistory: () => void
 }
 
-export default function Header({ documents, isConfigured, onSelectFiles, onProcessAll, onOpenSettings, onOpenHistory }: HeaderProps) {
+export default function Header({ documents, model, apiUrl, isConfigured, onSelectFiles, onProcessAll, onOpenSettings, onOpenHistory }: HeaderProps) {
 	const idleCount = documents.filter((d) => d.status === 'idle').length
+
+	// Extract short model name from full model string (e.g., "llama:3.2:3b-instruct" -> "llama:3.2")
+	const shortModel = model?.split(':')[0] + ':' + model?.split(':')[1]
 
 	return (
 		<header className="border-b border-border px-6 py-4 flex items-center justify-between">
-			<h1 className="text-xl font-semibold">Document Localizer</h1>
+			<div className="flex items-center gap-4">
+				<h1 className="text-xl font-semibold">Document Localizer</h1>
+				{model && (
+					<button
+						onClick={onOpenSettings}
+						className="px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors"
+						title={`Model: ${model}\nAPI: ${apiUrl}\nClick to change`}
+					>
+						{shortModel || model}
+					</button>
+				)}
+			</div>
 			<div className="flex gap-2">
 				{!isConfigured && (
 					<Button variant="destructive" onClick={onOpenSettings}>
