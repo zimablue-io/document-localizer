@@ -1,6 +1,6 @@
 import { Button } from '@doclocalizer/ui'
-import { Download, FileText, FileType } from 'lucide-react'
-import { ExportFormat, getFilterForFormat } from '../lib/export'
+import { FileText, FileType } from 'lucide-react'
+import { ExportFormat } from '../lib/export'
 
 interface ExportDialogProps {
 	docName: string
@@ -18,10 +18,24 @@ export function ExportDialog({ docName, isOpen, onClose, onExport }: ExportDialo
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center">
-			<div className="absolute inset-0 bg-black/50" onClick={onClose} />
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="export-dialog-title"
+		>
+			<div
+				className="absolute inset-0 bg-black/50 cursor-pointer"
+				onClick={onClose}
+				onKeyDown={(e) => e.key === 'Escape' && onClose()}
+				role="button"
+				tabIndex={-1}
+				aria-label="Close dialog"
+			/>
 			<div className="relative bg-card rounded-lg border border-border p-6 w-full max-w-sm shadow-xl">
-				<h2 className="text-lg font-semibold mb-1">Export Document</h2>
+				<h2 id="export-dialog-title" className="text-lg font-semibold mb-1">
+					Export Document
+				</h2>
 				<p className="text-sm text-muted-foreground mb-6">{docName}</p>
 
 				<div className="space-y-3">

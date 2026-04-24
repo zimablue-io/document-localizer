@@ -100,6 +100,9 @@ export interface DocumentState {
 	changeReview?: ChangeReviewState
 	// For processing queue
 	processingState?: ProcessingState
+	// Per-item locale configuration (overrides settings defaults)
+	sourceLocale?: string
+	targetLocale?: string
 }
 
 export interface ClassifiedChange {

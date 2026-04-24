@@ -1,6 +1,9 @@
 export interface ElectronAPI {
 	openFile: (options?: { multiple?: boolean }) => Promise<string[] | null>
-	saveFile: (options?: { defaultPath?: string; filters?: { name: string; extensions: string[] }[] }) => Promise<string | null>
+	saveFile: (options?: {
+		defaultPath?: string
+		filters?: { name: string; extensions: string[] }[]
+	}) => Promise<string | null>
 
 	getDroppedFilePaths: (files: File[]) => string[]
 	readTextFile: (filePath: string) => Promise<string>
@@ -22,6 +25,12 @@ export interface ElectronAPI {
 	addHistory: (entry: object) => Promise<unknown>
 	updateHistory: (id: string, updates: object) => Promise<unknown>
 	clearHistory: () => Promise<boolean>
+	loadUploaded: () => Promise<unknown[]>
+	saveUploaded: (documents: object) => Promise<boolean>
+	loadTasks: () => Promise<unknown[]>
+	saveTasks: (documents: object) => Promise<boolean>
+	loadProcessed: () => Promise<unknown[]>
+	saveProcessed: (documents: object) => Promise<boolean>
 }
 
 declare global {

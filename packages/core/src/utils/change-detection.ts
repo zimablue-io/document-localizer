@@ -1,5 +1,5 @@
-import { diffWords, Change } from 'diff'
-import type { TextChange, ChangeReviewState } from '../types'
+import { diffWords } from 'diff'
+import type { ChangeReviewState, TextChange } from '../types'
 
 /**
  * Detect granular changes between original and localized text
@@ -10,8 +10,8 @@ export function detectChanges(originalText: string, localizedText: string): Text
 
 	let originalIndex = 0
 	let localizedIndex = 0
-	let paragraphIndex = 0
-	let wordIndex = 0
+	const paragraphIndex = 0
+	const _wordIndex = 0
 
 	// Split into paragraphs for context
 	const originalParagraphs = originalText.split(/\n\n+/)
@@ -89,9 +89,7 @@ export function updateChangeStatus(
 	comment?: string
 ): TextChange[] {
 	return changes.map((change) =>
-		change.id === changeId
-			? { ...change, status: newStatus, comment: comment || change.comment }
-			: change
+		change.id === changeId ? { ...change, status: newStatus, comment: comment || change.comment } : change
 	)
 }
 
@@ -102,7 +100,7 @@ export function applyApprovedChanges(originalText: string, localizedText: string
 	const diffResult = diffWords(originalText, localizedText)
 	let result = ''
 
-	let changeIndex = 0
+	const _changeIndex = 0
 	const sortedChanges = [...changes].sort((a, b) => a.wordIndex - b.wordIndex)
 
 	for (const part of diffResult) {

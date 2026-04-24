@@ -4,9 +4,9 @@
  * Tests the full flow from processing to review to export.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { AIClient } from '../services/file-processor'
-import { getFileType, getMdFilePath, processFile } from '../services/file-processor'
+import { processFile } from '../services/file-processor'
 import type { DocumentInput } from '../types'
 
 // Helper to create mock AI client

@@ -68,7 +68,7 @@ They continued talking.`
 	})
 
 	it('should not split mid-paragraph', () => {
-		const longParagraph = 'This is a long paragraph. ' + 'Word '.repeat(200) + 'End.'
+		const longParagraph = `This is a long paragraph. ${'Word '.repeat(200)}End.`
 		const text = `First short paragraph.
 
 ${longParagraph}

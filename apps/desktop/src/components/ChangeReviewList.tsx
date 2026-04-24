@@ -104,7 +104,7 @@ export default function ChangeReviewList({
 						<p>No changes in this category</p>
 					</div>
 				) : (
-					filteredChanges.map((change, index) => (
+					filteredChanges.map((change, _index) => (
 						<ChangeCard
 							key={change.id}
 							change={change}
@@ -133,9 +133,7 @@ function FilterButton({
 	return (
 		<button
 			className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors ${
-				active
-					? 'bg-primary text-primary-foreground'
-					: 'bg-muted hover:bg-muted/80 text-muted-foreground'
+				active ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80 text-muted-foreground'
 			}`}
 			onClick={onClick}
 		>

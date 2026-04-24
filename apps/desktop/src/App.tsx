@@ -1,15 +1,14 @@
-import type { DocumentState } from '@doclocalizer/core'
-import { convertPdfToMarkdown, estimateContextSize } from '@doclocalizer/core'
+import { convertPdfToMarkdown } from '@doclocalizer/core'
 import { useCallback, useEffect, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { formatError } from './lib/utils'
-import { ExportFormat, contentToPdf, getFileExtension } from './lib/export'
 import DiffView from './components/DiffView'
 import DocumentList from './components/DocumentList'
 import EmptyState from './components/EmptyState'
 import Header from './components/Header'
 import HistoryPanel from './components/HistoryPanel'
 import SettingsModal from './components/SettingsModal'
+import { contentToPdf, ExportFormat, getFileExtension } from './lib/export'
+import { formatError } from './lib/utils'
 
 const DEFAULT_API_URL = 'http://localhost:8080/v1'
 const DEFAULT_MODEL = 'llama:3.2:3b-instruct'
@@ -74,26 +73,26 @@ async function loadSettings(): Promise<Settings> {
 		const result = await window.electron.loadSettings()
 		if (result && typeof result === 'object') {
 			const r = result as Record<string, unknown>
-			
+
 			// Handle legacy single model or new models array
 			const existingModels = (r.models as ModelConfig[]) || []
 			const legacyModel = r.model as string
-			
+
 			// If we have a legacy model but no models array, convert
 			let models = existingModels
 			let activeModelId = (r.activeModelId as string) || ''
-			
+
 			if (legacyModel && models.length === 0) {
 				const newModel: ModelConfig = {
 					id: crypto.randomUUID(),
-					name: legacyModel
+					name: legacyModel,
 				}
 				models = [newModel]
 				activeModelId = newModel.id
 			} else if (models.length > 0 && !activeModelId) {
 				activeModelId = models[0].id
 			}
-			
+
 			return {
 				apiUrl: (r.apiUrl as string) || DEFAULT_API_URL,
 				models,
@@ -102,19 +101,21 @@ async function loadSettings(): Promise<Settings> {
 				overlapSize: (r.overlapSize as string) || '100',
 				sourceLocale: (r.sourceLocale as string) || '',
 				targetLocale: (r.targetLocale as string) || '',
-				customLocales: Array.isArray(r.customLocales) 
-					? r.customLocales 
-					: (typeof r.customLocales === 'string' ? JSON.parse(r.customLocales) : []),
+				customLocales: Array.isArray(r.customLocales)
+					? r.customLocales
+					: typeof r.customLocales === 'string'
+						? JSON.parse(r.customLocales)
+						: [],
 			}
 		}
 	} catch (err) {
 		console.error('Error loading settings:', err)
 	}
-	
+
 	// Default with one model
 	const defaultModel: ModelConfig = {
 		id: crypto.randomUUID(),
-		name: DEFAULT_MODEL
+		name: DEFAULT_MODEL,
 	}
 	return {
 		apiUrl: DEFAULT_API_URL,
@@ -135,31 +136,34 @@ interface HistoryEntry {
 	sourceLocale: string
 	targetLocale: string
 	processedAt: string
-	status: 'processed' | 'approved' | 'rejected' | 'error'
+	status: 'processed' | 'review' | 'approved' | 'rejected' | 'error'
 	errorMessage?: string
 	chunksProcessed?: number
 }
 
-interface PersistedDocument {
+// Source document type - uploaded files are permanent library, never modified
+interface SourceDocument {
 	id: string
 	name: string
 	path: string
-	status: 'idle' | 'parsing' | 'localizing' | 'paused' | 'review' | 'approved' | 'error'
-	markdown?: string
-	localizedText?: string
-	error?: string
+	sourceLocale?: string
+	targetLocale?: string
 }
 
-function toPersistedDocument(doc: DocumentState): PersistedDocument {
-	return {
-		id: doc.id,
-		name: doc.name,
-		path: doc.path,
-		status: doc.status,
-		markdown: doc.markdown,
-		localizedText: doc.localizedText,
-		error: doc.error,
-	}
+// Processing output type - created when processing starts
+interface ProcessingOutput {
+	id: string
+	sourceDocId: string // Reference to source document
+	sourceDocName: string // Original filename
+	name: string // Output filename (e.g., "document.de-DE.localized.md")
+	path: string // Path to output file
+	sourceLocale: string
+	targetLocale: string
+	status: 'parsing' | 'localizing' | 'paused' | 'review' | 'approved' | 'rejected' | 'exported' | 'error'
+	markdown?: string
+	localizedText?: string
+	progress?: { current: number; total: number }
+	error?: string
 }
 
 async function readPdfFile(filePath: string): Promise<Uint8Array> {
@@ -183,29 +187,41 @@ function isPdfPath(path: string): boolean {
 }
 
 export default function App() {
-	const [documents, setDocuments] = useState<DocumentState[]>([])
-	const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+	const [sourceDocs, setSourceDocs] = useState<SourceDocument[]>([])
+	const [tasksDocs, setTasksDocs] = useState<ProcessingOutput[]>([])
+	const [processedDocs, setProcessedDocs] = useState<ProcessingOutput[]>([])
+	const [selectedOutputId, setSelectedOutputId] = useState<string | null>(null)
 	const [showSettings, setShowSettings] = useState(false)
 	const [showHistory, setShowHistory] = useState(false)
 	const [settings, setSettings] = useState<Settings | null>(null)
 	const [history, setHistory] = useState<HistoryEntry[]>([])
 	const [isLoading, setIsLoading] = useState(true)
-	const [isPaused, setIsPaused] = useState(false)
 	const [pausedChunkIndex, setPausedChunkIndex] = useState<Record<string, number>>({})
+	const [connectionRefreshKey, setConnectionRefreshKey] = useState(0)
 
-	// Load settings and history on mount
+	// Load settings, history, source docs, tasks, and processed docs on mount
 	useEffect(() => {
 		async function init() {
 			try {
 				const loadedSettings = await loadSettings()
 				setSettings(loadedSettings)
 
-				const loadedHistory = await window.electron.getHistory()
+				const loadedHistory = (await window.electron.getHistory()) as HistoryEntry[]
 				setHistory(loadedHistory)
 
-				const loadedDocuments = await window.electron.loadDocuments()
-				if (loadedDocuments && Array.isArray(loadedDocuments)) {
-					setDocuments(loadedDocuments as DocumentState[])
+				const loadedSource = (await window.electron.loadUploaded()) as SourceDocument[]
+				if (loadedSource && Array.isArray(loadedSource)) {
+					setSourceDocs(loadedSource)
+				}
+
+				const loadedTasks = (await window.electron.loadTasks()) as ProcessingOutput[]
+				if (loadedTasks && Array.isArray(loadedTasks)) {
+					setTasksDocs(loadedTasks)
+				}
+
+				const loadedProcessed = (await window.electron.loadProcessed()) as ProcessingOutput[]
+				if (loadedProcessed && Array.isArray(loadedProcessed)) {
+					setProcessedDocs(loadedProcessed)
 				}
 			} finally {
 				setIsLoading(false)
@@ -214,24 +230,37 @@ export default function App() {
 		void init()
 	}, [])
 
-	// Persist documents when they change
+	// Persist source docs when they change
 	useEffect(() => {
 		if (isLoading) return
-		const persisted = documents.map(toPersistedDocument)
-		void window.electron.saveDocuments(persisted)
-	}, [documents, isLoading])
+		void window.electron.saveUploaded(sourceDocs)
+	}, [sourceDocs, isLoading])
+
+	// Persist tasks docs when they change
+	useEffect(() => {
+		if (isLoading) return
+		void window.electron.saveTasks(tasksDocs)
+	}, [tasksDocs, isLoading])
+
+	// Persist processed docs when they change
+	useEffect(() => {
+		if (isLoading) return
+		void window.electron.saveProcessed(processedDocs)
+	}, [processedDocs, isLoading])
 
 	// Connection test removed - errors show when processing starts instead
 
 	const isConfigured = settings?.apiUrl && settings?.models?.length
 
 	// Get active model name
-	const activeModelName = settings?.models?.find(m => m.id === settings.activeModelId)?.name || settings?.models?.[0]?.name || ''
+	const activeModelName =
+		settings?.models?.find((m) => m.id === settings.activeModelId)?.name || settings?.models?.[0]?.name || ''
 	const currentModel = activeModelName
 
 	const addFilesToDocuments = useCallback(
 		(paths: string[]) => {
-			const existingPaths = new Set(documents.map((d) => d.path))
+			console.log('[addFilesToDocuments] called with paths:', paths)
+			const existingPaths = new Set(sourceDocs.map((d) => d.path))
 			const newPaths = paths.filter((p) => !existingPaths.has(p))
 
 			if (newPaths.length === 0) {
@@ -239,16 +268,17 @@ export default function App() {
 				return
 			}
 
-			const newDocs: DocumentState[] = newPaths.map((path) => ({
+			// Source documents are permanent library entries
+			const newDocs: SourceDocument[] = newPaths.map((path) => ({
 				id: crypto.randomUUID(),
 				name: path.split('/').pop() || path,
 				path,
-				status: 'idle' as const,
 			}))
-			setDocuments((prev) => [...prev, ...newDocs])
+			console.log('[addFilesToDocuments] adding docs:', newDocs.map((d) => d.name))
+			setSourceDocs((prev) => [...prev, ...newDocs])
 			toast.success(`Added ${newPaths.length} file(s)`)
 		},
-		[documents]
+		[sourceDocs]
 	)
 
 	const handleSelectFiles = useCallback(async () => {
@@ -263,22 +293,66 @@ export default function App() {
 	}, [addFilesToDocuments])
 
 	const handleProcess = useCallback(
-		async (id: string) => {
-			const doc = documents.find((d) => d.id === id)
-			if (!doc) return
+		async (sourceDocId: string) => {
+			console.log('[handleProcess] called with sourceDocId:', sourceDocId)
+
+			const sourceDoc = sourceDocs.find((d) => d.id === sourceDocId)
+			if (!sourceDoc) {
+				console.log('[handleProcess] source document not found!')
+				toast.error('Document not found')
+				return
+			}
+
+			console.log('[handleProcess] found source doc:', sourceDoc.name)
 
 			if (!settings || !isConfigured) {
-				toast.error('Please configure API URL, model, and target locale in settings')
+				console.log('[handleProcess] not configured:', { settings: !!settings, isConfigured })
+				toast.error('Please configure API URL and model in settings')
 				setShowSettings(true)
 				return
 			}
 
+			// Use per-document locale ONLY
+			const sourceLocale = sourceDoc.sourceLocale
+			const targetLocale = sourceDoc.targetLocale
+
+			console.log('[handleProcess] locales:', { sourceLocale, targetLocale })
+
+			if (!sourceLocale || !targetLocale) {
+				toast.error('Please set source and target locales before processing')
+				return
+			}
+
+			// Create output filename and path
+			const outputName = sourceDoc.name
+				.replace(/\.(pdf|md)$/i, `.${targetLocale}.localized.md`)
+			const outputPath = sourceDoc.path
+				.replace(/\.(pdf|md)$/i, `.${targetLocale}.localized.md`)
+
+			// Create NEW processing output entry
+			const outputId = crypto.randomUUID()
+			const newOutput: ProcessingOutput = {
+				id: outputId,
+				sourceDocId: sourceDoc.id,
+				sourceDocName: sourceDoc.name,
+				name: outputName,
+				path: outputPath,
+				sourceLocale,
+				targetLocale,
+				status: 'parsing',
+				progress: { current: 0, total: 1 },
+			}
+
+			// Add to tasksDocs immediately
+			setTasksDocs((prev) => [...prev, newOutput])
+			toast.info(`Processing ${sourceDoc.name} to ${targetLocale}...`)
+
 			// Create history entry
 			const historyEntry = await window.electron.addHistory({
-				fileName: doc.name,
-				filePath: doc.path,
-				sourceLocale: settings.sourceLocale,
-				targetLocale: settings.targetLocale,
+				fileName: sourceDoc.name,
+				filePath: sourceDoc.path,
+				sourceLocale,
+				targetLocale,
 				processedAt: new Date().toISOString(),
 				status: 'processed',
 			})
@@ -286,35 +360,31 @@ export default function App() {
 			let markdown: string
 
 			try {
-				if (isPdfPath(doc.path)) {
+				if (isPdfPath(sourceDoc.path)) {
 					// PDF file - convert to markdown
-					setDocuments((prev) =>
-						prev.map((d) =>
-							d.id === id ? { ...d, status: 'parsing', progress: { current: 0, total: 1, phase: 'parsing' } } : d
-						)
-					)
-
-					const bytes = await readPdfFile(doc.path)
+					const bytes = await readPdfFile(sourceDoc.path)
 					markdown = await convertPdfToMarkdown(bytes)
 
-					const mdPath = doc.path.replace(/\.pdf$/i, '.md')
+					// Save extracted markdown next to original
+					const mdPath = sourceDoc.path.replace(/\.pdf$/i, '.md')
 					await window.electron.writeTextFile(mdPath, markdown)
 				} else {
 					// .md file - read directly
-					markdown = await readTextFile(doc.path)
+					markdown = await readTextFile(sourceDoc.path)
 				}
 
 				// Split markdown into paragraphs - one paragraph per API call
 				const paragraphs = markdown.split(/\n\n+/).filter((p) => p.trim())
-				const localizedPath = doc.path.replace(/\.pdf$/i, '.localized.md').replace(/\.md$/i, '.localized.md')
-				await window.electron.writeTextFile(localizedPath, '')
+				await window.electron.writeTextFile(outputPath, '')
 
-				setDocuments((prev) =>
+				// Update status to localizing
+				setTasksDocs((prev) =>
 					prev.map((d) =>
-						d.id === id
+						d.id === outputId
 							? {
 									...d,
 									status: 'localizing',
+									markdown,
 									progress: { current: 0, total: paragraphs.length, phase: 'localizing' },
 								}
 							: d
@@ -322,41 +392,26 @@ export default function App() {
 				)
 
 				const promptTemplate = settings!.customPrompt || DEFAULT_PROMPT
-				// Process ONE paragraph at a time - no chunking, no overlap, no dedup needed
 				const localizedParagraphs: string[] = []
 
 				// Check for resume from pause
-				const resumeFrom = pausedChunkIndex[id]
+				const resumeFrom = pausedChunkIndex[outputId]
 				const startIndex = resumeFrom !== undefined ? resumeFrom : 0
 
-				for (let i = startIndex; i < paragraphs.length; i++) {
-					// Check current status by reading from state via setDocuments callback
-					let shouldContinue = true
-					setDocuments((prev) => {
-						const currentDoc = prev.find((d) => d.id === id)
-						if (!currentDoc || currentDoc.status === 'idle' || currentDoc.status === 'paused') {
-							shouldContinue = false
-							return prev
-						}
-						return prev.map((d) =>
-							d.id === id
-								? { ...d, progress: { current: i + 1, total: paragraphs.length, phase: 'localizing' } }
-								: d
-						)
-					})
+				// Performance: process paragraphs in parallel batches
+				const CONCURRENCY = 4
+				const PROGRESS_UPDATE_INTERVAL = 5
+				const DISK_WRITE_INTERVAL = 10
 
-					if (!shouldContinue) break
-
-					// Send ONLY this single paragraph to the LLM
-					const userContent = promptTemplate
-						.replace('{locale}', settings!.targetLocale)
-						.replace('{text}', paragraphs[i])
+				// Helper to process a single paragraph
+				const processParagraph = async (text: string): Promise<string> => {
+					const content = promptTemplate.replace('{locale}', targetLocale).replace('{text}', text)
 
 					const result = await window.electron.generateAI({
 						url: `${settings!.apiUrl}/chat/completions`,
 						body: {
 							model: currentModel,
-							messages: [{ role: 'user', content: userContent }],
+							messages: [{ role: 'user', content }],
 							temperature: 0.2,
 							max_tokens: 4096,
 							stream: false,
@@ -367,71 +422,113 @@ export default function App() {
 						throw new Error(result.error)
 					}
 
-					let content = result.content.trim()
+					let processed = result.content.trim()
 
 					// Remove code fences if present
-					if (content.startsWith('```')) {
-						content = content
+					if (processed.startsWith('```')) {
+						processed = processed
 							.replace(/^```(?:markdown)?\n?/i, '')
 							.replace(/\n?```$/i, '')
 							.trim()
 					}
 
-					// Remove ---BEGIN TEXT--- marker and anything before it
-					const beginMarker = content.indexOf('---BEGIN TEXT---')
+					// Remove markers
+					const beginMarker = processed.indexOf('---BEGIN TEXT---')
 					if (beginMarker !== -1) {
-						content = content.slice(beginMarker + '---BEGIN TEXT---'.length)
+						processed = processed.slice(beginMarker + '---BEGIN TEXT---'.length)
 					}
-
-					// Remove ---END TEXT--- marker and anything after it
-					const endMarker = content.indexOf('---END TEXT---')
+					const endMarker = processed.indexOf('---END TEXT---')
 					if (endMarker !== -1) {
-						content = content.slice(0, endMarker)
+						processed = processed.slice(0, endMarker)
 					}
 
 					// Remove any leading commentary
-					content = content.replace(/^Here'?s? (?:the )?translation[.:].*/i, '').trim()
-					content = content.replace(/^Translate the text above.*/i, '').trim()
-					content = content.replace(/^Here(?:'|)s?.*translation.*/i, '').trim()
+					processed = processed.replace(/^Here'?s? (?:the )?translation[.:].*/i, '').trim()
+					processed = processed.replace(/^Translate the text above.*/i, '').trim()
+					processed = processed.replace(/^Here(?:'|)s?.*translation.*/i, '').trim()
 
-					// Remove trailing newlines
-					content = content.trim()
-
-					// Store result directly - no dedup needed since we process one paragraph at a time
-					localizedParagraphs.push(content)
-
-					// Write intermediate result
-					await window.electron.writeTextFile(localizedPath, localizedParagraphs.join('\n\n'))
+					return processed.trim()
 				}
 
-				setDocuments((prev) =>
+				// Helper to check if processing should continue
+				let shouldContinue = true
+				const checkContinue = (): boolean => {
+					setTasksDocs((prev) => {
+						const currentDoc = prev.find((d) => d.id === outputId)
+						if (!currentDoc || currentDoc.status === 'paused') {
+							shouldContinue = false
+							return prev
+						}
+						return prev
+					})
+					return shouldContinue
+				}
+
+				// Helper to update progress (batched)
+				const updateProgress = (current: number, total: number) => {
+					if (current % PROGRESS_UPDATE_INTERVAL === 0 || current === total) {
+						setTasksDocs((prev) =>
+							prev.map((d) =>
+								d.id === outputId ? { ...d, progress: { current, total, phase: 'localizing' } } : d
+							)
+						)
+					}
+				}
+
+				// Helper to write intermediate results (batched)
+				let lastWriteIndex = 0
+				const maybeWrite = async () => {
+					if (localizedParagraphs.length - lastWriteIndex >= DISK_WRITE_INTERVAL) {
+						await window.electron.writeTextFile(outputPath, localizedParagraphs.join('\n\n'))
+						lastWriteIndex = localizedParagraphs.length
+					}
+				}
+
+				// Process in parallel batches
+				for (let i = startIndex; i < paragraphs.length; i += CONCURRENCY) {
+					if (!checkContinue()) break
+
+					const batch = paragraphs.slice(i, i + CONCURRENCY)
+					const results = await Promise.all(batch.map((p) => processParagraph(p)))
+					localizedParagraphs.push(...results)
+
+					updateProgress(Math.min(i + CONCURRENCY, paragraphs.length), paragraphs.length)
+					await maybeWrite()
+				}
+
+				// Write final result
+				await window.electron.writeTextFile(outputPath, localizedParagraphs.join('\n\n'))
+
+				// Update to review status
+				setTasksDocs((prev) =>
 					prev.map((d) =>
-						d.id === id
+						d.id === outputId
 							? {
 									...d,
 									status: 'review',
-									markdown,
 									localizedText: localizedParagraphs.join('\n\n'),
 									progress: undefined,
 								}
 							: d
 					)
 				)
-				toast.success(`${doc.name} processed`)
+				toast.success(`${sourceDoc.name} processed to ${targetLocale}`)
 
 				// Update history entry
 				if (historyEntry?.id) {
 					await window.electron.updateHistory(historyEntry.id, {
-						status: 'processed',
+						status: 'review',
 						chunksProcessed: paragraphs.length,
 					})
 				}
 			} catch (err) {
 				const cleanError = formatError(err)
-				setDocuments((prev) =>
-					prev.map((d) => (d.id === id ? { ...d, status: 'error', error: cleanError, progress: undefined } : d))
+				setTasksDocs((prev) =>
+					prev.map((d) =>
+						d.id === outputId ? { ...d, status: 'error', error: cleanError, progress: undefined } : d
+					)
 				)
-				toast.error(`Failed to process ${doc.name}: ${cleanError}`)
+				toast.error(`Failed to process ${sourceDoc.name}: ${cleanError}`)
 
 				// Update history entry with error
 				if (historyEntry?.id) {
@@ -442,21 +539,26 @@ export default function App() {
 				}
 			}
 		},
-		[documents, isConfigured]
+		[
+			sourceDocs,
+			currentModel,
+			settings?.customPrompt,
+			settings,
+			pausedChunkIndex,
+		]
 	)
 
 	const handleProcessAll = useCallback(() => {
-		documents
-			.filter((d) => d.status === 'idle')
-			.forEach((d) => {
+		sourceDocs.forEach((d) => {
+			// Only process if both locales are set
+			if (d.sourceLocale && d.targetLocale) {
 				void handleProcess(d.id)
-			})
-	}, [documents, handleProcess])
+			}
+		})
+	}, [sourceDocs, handleProcess])
 
 	const handleStop = useCallback((id: string) => {
-		setDocuments((prev) =>
-			prev.map((d) => (d.id === id ? { ...d, status: 'idle', progress: undefined } : d))
-		)
+		setTasksDocs((prev) => prev.filter((d) => d.id !== id))
 		setPausedChunkIndex((prev) => {
 			const next = { ...prev }
 			delete next[id]
@@ -465,42 +567,43 @@ export default function App() {
 		toast.info('Processing stopped')
 	}, [])
 
-	const handlePause = useCallback((id: string) => {
-		const doc = documents.find((d) => d.id === id)
-		if (!doc || doc.status !== 'localizing') return
+	const handlePause = useCallback(
+		(id: string) => {
+			const doc = tasksDocs.find((d) => d.id === id)
+			if (!doc || doc.status !== 'localizing') return
 
-		setIsPaused(true)
-		setPausedChunkIndex((prev) => ({
-			...prev,
-			[id]: doc.progress?.current || 0,
-		}))
-		setDocuments((prev) =>
-			prev.map((d) => (d.id === id ? { ...d, status: 'paused' } : d))
-		)
-		toast.info('Processing paused')
-	}, [documents])
+			setPausedChunkIndex((prev) => ({
+				...prev,
+				[id]: doc.progress?.current || 0,
+			}))
+			setTasksDocs((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'paused' } : d)))
+			toast.info('Processing paused')
+		},
+		[tasksDocs]
+	)
 
-	const handleResume = useCallback((id: string) => {
-		const resumeFrom = pausedChunkIndex[id] || 0
-		setIsPaused(false)
-		setPausedChunkIndex((prev) => {
-			const next = { ...prev }
-			delete next[id]
-			return next
-		})
-		setDocuments((prev) =>
-			prev.map((d) =>
-				d.id === id
-					? { ...d, status: 'localizing', progress: { ...d.progress!, current: resumeFrom } }
-					: d
+	const handleResume = useCallback(
+		(id: string) => {
+			const resumeFrom = pausedChunkIndex[id] || 0
+			setPausedChunkIndex((prev) => {
+				const next = { ...prev }
+				delete next[id]
+				return next
+			})
+			setTasksDocs((prev) =>
+				prev.map((d) =>
+					d.id === id ? { ...d, status: 'localizing', progress: { ...d.progress!, current: resumeFrom } } : d
+				)
 			)
-		)
-	}, [pausedChunkIndex])
+		},
+		[pausedChunkIndex]
+	)
 
 	const handleSaveSettings = useCallback(async () => {
 		if (!settings) return
 		await window.electron.saveSettings(settings)
 		setShowSettings(false)
+		setConnectionRefreshKey((prev) => prev + 1)
 		toast.success('Settings saved')
 	}, [settings])
 
@@ -510,43 +613,47 @@ export default function App() {
 	}, [])
 
 	const handleApprove = useCallback(async () => {
-		const doc = documents.find((d) => d.id === selectedDocId)
-		setDocuments((prev) => prev.map((d) => (d.id === selectedDocId ? { ...d, status: 'approved', error: undefined } : d)))
-		setSelectedDocId(null)
+		const output = tasksDocs.find((d) => d.id === selectedOutputId)
+		if (!output) return
+
+		// Move from tasksDocs to processedDocs with 'approved' status
+		setTasksDocs((prev) => prev.filter((d) => d.id !== selectedOutputId))
+		setProcessedDocs((prev) => [...prev, { ...output, status: 'approved' }])
+		setSelectedOutputId(null)
 		toast.success('Document approved')
 
 		// Update history with approved status
-		if (doc) {
-			const historyEntries = await window.electron.getHistory()
-			const entry = historyEntries.find((h) => h.filePath === doc.path)
-			if (entry) {
-				await window.electron.updateHistory(entry.id, { status: 'approved' })
-				setHistory(await window.electron.getHistory())
-			}
+		const historyEntries = (await window.electron.getHistory()) as HistoryEntry[]
+		const entry = historyEntries.find((h) => h.filePath === output.path)
+		if (entry) {
+			await window.electron.updateHistory(entry.id, { status: 'approved' })
+			setHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [selectedDocId, documents])
+	}, [selectedOutputId, tasksDocs])
 
 	const handleReject = useCallback(async () => {
-		const doc = documents.find((d) => d.id === selectedDocId)
-		setDocuments((prev) => prev.map((d) => (d.id === selectedDocId ? { ...d, status: 'idle' } : d)))
-		setSelectedDocId(null)
+		const output = tasksDocs.find((d) => d.id === selectedOutputId)
+		if (!output) return
+
+		// Move from tasksDocs to processedDocs with 'rejected' status
+		setTasksDocs((prev) => prev.filter((d) => d.id !== selectedOutputId))
+		setProcessedDocs((prev) => [...prev, { ...output, status: 'rejected' }])
+		setSelectedOutputId(null)
 
 		// Update history with rejected status
-		if (doc) {
-			const historyEntries = await window.electron.getHistory()
-			const entry = historyEntries.find((h) => h.filePath === doc.path)
-			if (entry) {
-				await window.electron.updateHistory(entry.id, { status: 'rejected' })
-				setHistory(await window.electron.getHistory())
-			}
+		const historyEntries = (await window.electron.getHistory()) as HistoryEntry[]
+		const entry = historyEntries.find((h) => h.filePath === output.path)
+		if (entry) {
+			await window.electron.updateHistory(entry.id, { status: 'rejected' })
+			setHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [selectedDocId, documents])
+	}, [selectedOutputId, tasksDocs])
 
 	const handleUpdateLocalizedText = useCallback(
 		(paragraphIndex: number, newText: string) => {
-			setDocuments((prev) =>
+			setTasksDocs((prev) =>
 				prev.map((d) => {
-					if (d.id !== selectedDocId) return d
+					if (d.id !== selectedOutputId) return d
 
 					const paragraphs = (d.localizedText || '').split(/\n\n+/)
 					paragraphs[paragraphIndex] = newText
@@ -559,14 +666,14 @@ export default function App() {
 			)
 			toast.success('Paragraph updated')
 		},
-		[selectedDocId]
+		[selectedOutputId]
 	)
 
 	const handleShiftLocalizedParagraph = useCallback(
 		(paragraphIndex: number, direction: 'up' | 'down') => {
-			setDocuments((prev) =>
+			setTasksDocs((prev) =>
 				prev.map((d) => {
-					if (d.id !== selectedDocId) return d
+					if (d.id !== selectedOutputId) return d
 
 					const paragraphs = (d.localizedText || '').split(/\n\n+/)
 					const swapIndex = direction === 'up' ? paragraphIndex - 1 : paragraphIndex + 1
@@ -589,14 +696,14 @@ export default function App() {
 			)
 			toast.success(`Paragraph shifted ${direction}`)
 		},
-		[selectedDocId]
+		[selectedOutputId]
 	)
 
 	const handleInsertLocalizedParagraph = useCallback(
 		(paragraphIndex: number, direction: 'above' | 'below') => {
-			setDocuments((prev) =>
+			setTasksDocs((prev) =>
 				prev.map((d) => {
-					if (d.id !== selectedDocId) return d
+					if (d.id !== selectedOutputId) return d
 
 					const paragraphs = (d.localizedText || '').split(/\n\n+/)
 					const insertAt = direction === 'above' ? paragraphIndex : paragraphIndex + 1
@@ -610,14 +717,14 @@ export default function App() {
 			)
 			toast.success(`Paragraph inserted ${direction}`)
 		},
-		[selectedDocId]
+		[selectedOutputId]
 	)
 
 	const handleDeleteLocalizedParagraph = useCallback(
 		(paragraphIndex: number) => {
-			setDocuments((prev) =>
+			setTasksDocs((prev) =>
 				prev.map((d) => {
-					if (d.id !== selectedDocId) return d
+					if (d.id !== selectedOutputId) return d
 
 					const paragraphs = (d.localizedText || '').split(/\n\n+/)
 					if (paragraphs.length <= 1) {
@@ -634,29 +741,34 @@ export default function App() {
 			)
 			toast.success('Paragraph deleted')
 		},
-		[selectedDocId]
+		[selectedOutputId]
 	)
 
 	const handleExport = useCallback(
 		async (id: string, format: ExportFormat) => {
-			const doc = documents.find((d) => d.id === id)
-			if (!doc) {
+			// Check both tasks and processed docs for the output
+			const output = tasksDocs.find((d) => d.id === id) || processedDocs.find((d) => d.id === id)
+			if (!output) {
 				toast.error('Document not found')
 				return
 			}
-			if (!doc.localizedText) {
+			if (!output.localizedText) {
 				toast.error('No localized text to export')
 				return
 			}
 
 			try {
-				const baseFilename = doc.name.replace(/\.[^.]+$/, '')
+				const baseFilename = output.sourceDocName.replace(/\.[^.]+$/, '')
 				const extension = getFileExtension(format)
 				const defaultFilename = `${baseFilename}.localized${extension}`
 
 				const savePath = await window.electron.saveFile({
 					defaultPath: defaultFilename,
-					filters: [format === 'pdf' ? { name: 'PDF', extensions: ['pdf'] } : { name: 'Markdown', extensions: ['md'] }],
+					filters: [
+						format === 'pdf'
+							? { name: 'PDF', extensions: ['pdf'] }
+							: { name: 'Markdown', extensions: ['md'] },
+					],
 				})
 
 				if (!savePath) {
@@ -664,12 +776,12 @@ export default function App() {
 				}
 
 				if (format === 'pdf') {
-					const pdfBlob = contentToPdf(doc.localizedText, baseFilename)
+					const pdfBlob = contentToPdf(output.localizedText, baseFilename)
 					const arrayBuffer = await pdfBlob.arrayBuffer()
 					const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
 					await window.electron.writeBase64File(savePath, base64)
 				} else {
-					await window.electron.writeTextFile(savePath, doc.localizedText)
+					await window.electron.writeTextFile(savePath, output.localizedText)
 				}
 				toast.success(`Exported to ${savePath}`)
 			} catch (err) {
@@ -677,10 +789,10 @@ export default function App() {
 				toast.error(`Export failed: ${cleanError}`)
 			}
 		},
-		[documents]
+		[tasksDocs, processedDocs]
 	)
 
-	const selectedDoc = documents.find((d) => d.id === selectedDocId)
+	const selectedOutput = tasksDocs.find((d) => d.id === selectedOutputId)
 
 	// Loading state
 	if (isLoading) {
@@ -699,25 +811,26 @@ export default function App() {
 			<Toaster position="bottom-right" richColors closeButton />
 
 			<Header
-				documents={documents}
+				sourceDocuments={sourceDocs}
 				models={settings?.models}
 				activeModelId={settings?.activeModelId}
 				apiUrl={settings?.apiUrl}
 				isConfigured={!!isConfigured}
+				connectionRefreshKey={connectionRefreshKey}
 				onSelectFiles={handleSelectFiles}
 				onProcessAll={handleProcessAll}
 				onOpenSettings={() => setShowSettings(true)}
 				onOpenHistory={() => setShowHistory(true)}
-				onModelChange={(modelId) => setSettings(prev => prev ? { ...prev, activeModelId: modelId } : null)}
+				onModelChange={(modelId) => setSettings((prev) => (prev ? { ...prev, activeModelId: modelId } : null))}
 			/>
 
 			<main className="flex-1 p-6 overflow-auto">
-				{selectedDocId && selectedDoc && (
+				{selectedOutputId && selectedOutput && (
 					<DiffView
-						document={selectedDoc}
+						document={selectedOutput}
 						onApprove={handleApprove}
 						onReject={handleReject}
-						onBack={() => setSelectedDocId(null)}
+						onBack={() => setSelectedOutputId(null)}
 						onUpdateLocalizedText={handleUpdateLocalizedText}
 						onShiftLocalizedParagraph={handleShiftLocalizedParagraph}
 						onInsertLocalizedParagraph={handleInsertLocalizedParagraph}
@@ -725,19 +838,48 @@ export default function App() {
 					/>
 				)}
 
-				{!selectedDocId && documents.length === 0 && <EmptyState onFilesAdded={addFilesToDocuments} onSelectFiles={handleSelectFiles} />}
+				{!selectedOutputId && sourceDocs.length === 0 && tasksDocs.length === 0 && processedDocs.length === 0 && (
+					<EmptyState onFilesAdded={addFilesToDocuments} onSelectFiles={handleSelectFiles} />
+				)}
 
-				{!selectedDocId && documents.length > 0 && (
+				{!selectedOutputId && (sourceDocs.length > 0 || tasksDocs.length > 0 || processedDocs.length > 0) && (
 					<DocumentList
-						documents={documents}
+						sourceDocs={sourceDocs}
+						tasksDocs={tasksDocs}
+						processedDocs={processedDocs}
+						locales={
+							settings?.customLocales?.length
+								? settings.customLocales
+								: [
+										{ code: 'en-US', name: 'American English' },
+										{ code: 'en-GB', name: 'British English' },
+										{ code: 'en-AU', name: 'Australian English' },
+										{ code: 'en-NZ', name: 'New Zealand English' },
+									]
+						}
 						onProcess={handleProcess}
-						onReview={setSelectedDocId}
-						onRemove={(id) => setDocuments((prev) => prev.filter((d) => d.id !== id))}
+						onReview={setSelectedOutputId}
+						onRemoveSource={(id) => setSourceDocs((prev) => prev.filter((d) => d.id !== id))}
+						onRemoveTask={(id) => setTasksDocs((prev) => prev.filter((d) => d.id !== id))}
+						onRemoveProcessed={(id) => setProcessedDocs((prev) => prev.filter((d) => d.id !== id))}
 						onStop={handleStop}
 						onPause={handlePause}
 						onResume={handleResume}
 						onFilesAdded={addFilesToDocuments}
 						onExport={handleExport}
+						onLocaleChange={(id, source, target) => {
+							setSourceDocs((prev) =>
+								prev.map((d) =>
+									d.id === id
+										? {
+												...d,
+												...(source && { sourceLocale: source }),
+												...(target && { targetLocale: target }),
+											}
+										: d
+								)
+							)
+						}}
 					/>
 				)}
 			</main>

@@ -1,20 +1,6 @@
-import {
-	Button,
-	Input,
-	Label,
-	ScrollArea,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-} from '@doclocalizer/ui'
+import { Button, Input, Label, ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@doclocalizer/ui'
+import { Check, Edit2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Plus, Trash2, Edit2, Check } from 'lucide-react'
 
 interface Locale {
 	code: string
@@ -85,7 +71,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 	const [editingLocale, setEditingLocale] = useState<Locale | null>(null)
 	const [editCode, setEditCode] = useState('')
 	const [editName, setEditName] = useState('')
-	
+
 	// Model management state
 	const [newModelName, setNewModelName] = useState('')
 	const [editingModelId, setEditingModelId] = useState<string | null>(null)
@@ -99,7 +85,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 		if (newModelName.trim()) {
 			const newModel: ModelConfig = {
 				id: crypto.randomUUID(),
-				name: newModelName.trim()
+				name: newModelName.trim(),
 			}
 			const updatedModels = [...settings.models, newModel]
 			onChange({ ...settings, models: updatedModels, activeModelId: updatedModels[0].id })
@@ -108,7 +94,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 	}
 
 	const handleRemoveModel = (id: string) => {
-		const updatedModels = settings.models.filter(m => m.id !== id)
+		const updatedModels = settings.models.filter((m) => m.id !== id)
 		let newActiveId = settings.activeModelId
 		if (settings.activeModelId === id) {
 			newActiveId = updatedModels[0]?.id || ''
@@ -123,7 +109,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 
 	const handleSaveEditModel = () => {
 		if (editingModelId && editModelName.trim()) {
-			const updatedModels = settings.models.map(m =>
+			const updatedModels = settings.models.map((m) =>
 				m.id === editingModelId ? { ...m, name: editModelName.trim() } : m
 			)
 			onChange({ ...settings, models: updatedModels })
@@ -183,7 +169,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 		setEditName('')
 	}
 
-	const allLocales = settings.customLocales
+	const _allLocales = settings.customLocales
 
 	return (
 		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -200,50 +186,11 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 
 					<ScrollArea className="flex-1 min-h-0 mt-4">
 						<TabsContent value="locales" className="space-y-4 pr-4">
-							{settings.customLocales.length > 0 && (
-								<div className="grid grid-cols-2 gap-4">
-									<div className="space-y-1.5">
-										<Label htmlFor="source-locale">Source Locale</Label>
-										<Select
-											value={settings.sourceLocale}
-											onValueChange={(v) => onChange({ ...settings, sourceLocale: v })}
-										>
-											<SelectTrigger id="source-locale" className="w-full">
-												<SelectValue placeholder="Select source..." />
-											</SelectTrigger>
-											<SelectContent>
-												{allLocales.map((locale) => (
-													<SelectItem key={locale.code} value={locale.code}>
-														{locale.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<p className="text-xs text-muted-foreground">
-											Original language of your documents
-										</p>
-									</div>
-									<div className="space-y-1.5">
-										<Label htmlFor="target-locale">Target Locale</Label>
-										<Select
-											value={settings.targetLocale}
-											onValueChange={(v) => onChange({ ...settings, targetLocale: v })}
-										>
-											<SelectTrigger id="target-locale" className="w-full">
-												<SelectValue placeholder="Select target..." />
-											</SelectTrigger>
-											<SelectContent>
-												{allLocales.map((locale) => (
-													<SelectItem key={locale.code} value={locale.code}>
-														{locale.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<p className="text-xs text-muted-foreground">Language to translate to</p>
-									</div>
-								</div>
-							)}
+							<div className="mb-4">
+								<p className="text-sm text-muted-foreground">
+									Manage available locales. Each document can be processed to a different locale.
+								</p>
+							</div>
 
 							<div className="border-t border-border pt-4">
 								<Label className="mb-2 block">Add Locale</Label>
@@ -344,7 +291,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 									placeholder="http://localhost:8080/v1"
 								/>
 							</div>
-							
+
 							<div className="border-t border-border pt-4">
 								<Label className="mb-2 block">Models</Label>
 								<div className="flex gap-2 mb-3">
@@ -360,7 +307,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 										Add
 									</Button>
 								</div>
-								
+
 								{settings.models.length > 0 && (
 									<div className="space-y-2">
 										{settings.models.map((model) => (
@@ -376,7 +323,11 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 															/>
 														</div>
 														<div className="flex gap-2 justify-end">
-															<Button variant="outline" size="sm" onClick={handleCancelEditModel}>
+															<Button
+																variant="outline"
+																size="sm"
+																onClick={handleCancelEditModel}
+															>
 																Cancel
 															</Button>
 															<Button size="sm" onClick={handleSaveEditModel}>
@@ -390,7 +341,9 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 														<span className="flex items-center gap-2">
 															{model.name}
 															{model.id === settings.activeModelId && (
-																<span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">Active</span>
+																<span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">
+																	Active
+																</span>
 															)}
 														</span>
 														<div className="flex gap-2">

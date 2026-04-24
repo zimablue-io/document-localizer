@@ -1,8 +1,6 @@
-import { Button } from '@doclocalizer/ui'
+import { Button, ScrollArea, Sheet, SheetContent } from '@doclocalizer/ui'
 import { formatDistanceToNow } from 'date-fns'
-import { Clock, FileText, Trash2 } from 'lucide-react'
-import { ScrollArea } from '@doclocalizer/ui'
-import { Sheet, SheetContent } from '@doclocalizer/ui'
+import { Clock, FileText, Trash2, X } from 'lucide-react'
 
 interface HistoryEntry {
 	id: string
@@ -11,7 +9,7 @@ interface HistoryEntry {
 	sourceLocale: string
 	targetLocale: string
 	processedAt: string
-	status: 'processed' | 'approved' | 'rejected' | 'error'
+	status: 'processed' | 'review' | 'approved' | 'rejected' | 'error'
 	errorMessage?: string
 	chunksProcessed?: number
 }
@@ -31,7 +29,8 @@ function getStatusColor(status: HistoryEntry['status']): string {
 			return 'text-orange-500'
 		case 'error':
 			return 'text-red-500'
-		case 'processed':
+		case 'review':
+			return 'text-yellow-500'
 		default:
 			return 'text-blue-500'
 	}
@@ -45,7 +44,8 @@ function getStatusLabel(status: HistoryEntry['status']): string {
 			return 'Rejected'
 		case 'error':
 			return 'Failed'
-		case 'processed':
+		case 'review':
+			return 'In Review'
 		default:
 			return 'Processed'
 	}
@@ -71,9 +71,7 @@ export default function HistoryPanel({ history, isOpen, onClose, onClear }: Hist
 							</Button>
 						)}
 						<Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
-							<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-							</svg>
+							<X className="w-4 h-4" />
 						</Button>
 					</div>
 				</div>
@@ -110,7 +108,9 @@ export default function HistoryPanel({ history, isOpen, onClose, onClear }: Hist
 
 									<div className="flex items-center gap-2 text-xs text-muted-foreground">
 										<Clock className="w-3 h-3" />
-										<span>{formatDistanceToNow(new Date(entry.processedAt), { addSuffix: true })}</span>
+										<span>
+											{formatDistanceToNow(new Date(entry.processedAt), { addSuffix: true })}
+										</span>
 									</div>
 
 									{entry.errorMessage && (

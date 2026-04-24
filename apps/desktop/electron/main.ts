@@ -1,6 +1,6 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, net } from 'electron'
-import fs from 'fs'
-import path from 'path'
 
 // For dev logging
 const DEBUG = true
@@ -154,7 +154,7 @@ interface HistoryEntry {
 	sourceLocale: string
 	targetLocale: string
 	processedAt: string
-	status: 'processed' | 'approved' | 'rejected' | 'error'
+	status: 'processed' | 'review' | 'approved' | 'rejected' | 'error'
 	errorMessage?: string
 	chunksProcessed?: number
 }
@@ -261,37 +261,106 @@ ipcMain.handle('history:clear', async () => {
 // Documents persistence using JSON file
 const documentsFilePath = path.join(app.getPath('userData'), 'documents.json')
 
-interface PersistedDocument {
+// Uploaded documents - original files user uploaded
+interface UploadedDocument {
 	id: string
 	name: string
 	path: string
-	status: 'idle' | 'parsing' | 'localizing' | 'paused' | 'review' | 'approved' | 'error'
+	sourceLocale?: string
+	targetLocale?: string
+}
+
+// Processed documents - output files from localization
+interface ProcessedDocument {
+	id: string
+	originalDocId: string
+	name: string
+	path: string
+	status: 'pending' | 'processing' | 'review' | 'approved' | 'exported' | 'error'
 	markdown?: string
 	localizedText?: string
 	error?: string
+	progress?: { current: number; total: number }
 }
 
-ipcMain.handle('documents:load', async () => {
+ipcMain.handle('uploaded:load', async () => {
 	try {
 		ensureUserDataDir()
-		if (fs.existsSync(documentsFilePath)) {
-			const data = fs.readFileSync(documentsFilePath, 'utf-8')
+		const uploadedFilePath = path.join(app.getPath('userData'), 'uploaded.json')
+		if (fs.existsSync(uploadedFilePath)) {
+			const data = fs.readFileSync(uploadedFilePath, 'utf-8')
 			return JSON.parse(data)
 		}
 	} catch (e) {
-		log('Error loading documents:', e)
+		log('Error loading uploaded docs:', e)
 	}
 	return []
 })
 
-ipcMain.handle('documents:save', async (_event, documents: PersistedDocument[]) => {
+ipcMain.handle('uploaded:save', async (_event, documents: UploadedDocument[]) => {
 	try {
 		ensureUserDataDir()
-		fs.writeFileSync(documentsFilePath, JSON.stringify(documents, null, 2), 'utf-8')
-		log('Documents saved to:', documentsFilePath)
+		const uploadedFilePath = path.join(app.getPath('userData'), 'uploaded.json')
+		fs.writeFileSync(uploadedFilePath, JSON.stringify(documents, null, 2), 'utf-8')
+		log('Uploaded docs saved to:', uploadedFilePath)
 		return true
 	} catch (e) {
-		log('Error saving documents:', e)
+		log('Error saving uploaded docs:', e)
+		return false
+	}
+})
+
+ipcMain.handle('processed:load', async () => {
+	try {
+		ensureUserDataDir()
+		const processedFilePath = path.join(app.getPath('userData'), 'processed.json')
+		if (fs.existsSync(processedFilePath)) {
+			const data = fs.readFileSync(processedFilePath, 'utf-8')
+			return JSON.parse(data)
+		}
+	} catch (e) {
+		log('Error loading processed docs:', e)
+	}
+	return []
+})
+
+ipcMain.handle('processed:save', async (_event, documents: ProcessedDocument[]) => {
+	try {
+		ensureUserDataDir()
+		const processedFilePath = path.join(app.getPath('userData'), 'processed.json')
+		fs.writeFileSync(processedFilePath, JSON.stringify(documents, null, 2), 'utf-8')
+		log('Processed docs saved to:', processedFilePath)
+		return true
+	} catch (e) {
+		log('Error saving processed docs:', e)
+		return false
+	}
+})
+
+// Tasks persistence (active processing outputs) using JSON file
+const tasksFilePath = path.join(app.getPath('userData'), 'tasks.json')
+
+ipcMain.handle('tasks:load', async () => {
+	try {
+		ensureUserDataDir()
+		if (fs.existsSync(tasksFilePath)) {
+			const data = fs.readFileSync(tasksFilePath, 'utf-8')
+			return JSON.parse(data)
+		}
+	} catch (e) {
+		log('Error loading tasks docs:', e)
+	}
+	return []
+})
+
+ipcMain.handle('tasks:save', async (_event, documents: ProcessedDocument[]) => {
+	try {
+		ensureUserDataDir()
+		fs.writeFileSync(tasksFilePath, JSON.stringify(documents, null, 2), 'utf-8')
+		log('Tasks docs saved to:', tasksFilePath)
+		return true
+	} catch (e) {
+		log('Error saving tasks docs:', e)
 		return false
 	}
 })

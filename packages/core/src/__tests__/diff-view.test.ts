@@ -4,8 +4,8 @@
  * Run with: cd packages/core && npx vitest run src/__tests__/diff-view.test.ts
  */
 
-import { describe, expect, it } from 'vitest'
 import { diffWords } from 'diff'
+import { describe, expect, it } from 'vitest'
 
 describe('Word-level Diff', () => {
 	it('should detect single word difference', () => {

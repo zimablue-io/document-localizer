@@ -1,10 +1,16 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
-import { useState, useCallback } from 'react'
 import { diffWords } from 'diff'
+import { useCallback, useState } from 'react'
 
 interface DiffViewProps {
-	document: DocumentState
+	document: {
+		id: string
+		name: string
+		markdown?: string
+		localizedText?: string
+		status: string
+	}
 	onApprove: () => void
 	onReject: () => void
 	onBack: () => void
@@ -70,7 +76,6 @@ function LocalizedColumn({
 				className="w-full min-h-[80px] p-2 rounded bg-green-950/20 border border-green-900/30 font-mono text-sm resize-none"
 				value={editText}
 				onChange={(e) => onTextChange?.(e.target.value)}
-				autoFocus
 			/>
 		)
 	}
@@ -94,7 +99,16 @@ function LocalizedColumn({
 	)
 }
 
-export default function DiffViewComponent({ document, onApprove, onReject, onBack, onUpdateLocalizedText, onShiftLocalizedParagraph, onInsertLocalizedParagraph, onDeleteLocalizedParagraph }: DiffViewProps) {
+export default function DiffViewComponent({
+	document,
+	onApprove,
+	onReject,
+	onBack,
+	onUpdateLocalizedText,
+	onShiftLocalizedParagraph,
+	onInsertLocalizedParagraph,
+	onDeleteLocalizedParagraph,
+}: DiffViewProps) {
 	const [viewMode, setViewMode] = useState<ViewMode>('side-by-side')
 	const [editingParagraph, setEditingParagraph] = useState<EditState | null>(null)
 
@@ -245,8 +259,18 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 															className="p-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed"
 															title="Shift up"
 														>
-															<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+															<svg
+																className="w-3 h-3"
+																fill="none"
+																viewBox="0 0 24 24"
+																stroke="currentColor"
+															>
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	strokeWidth={2}
+																	d="M5 15l7-7 7 7"
+																/>
 															</svg>
 														</button>
 														<button
@@ -255,8 +279,18 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 															className="p-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed"
 															title="Shift down"
 														>
-															<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+															<svg
+																className="w-3 h-3"
+																fill="none"
+																viewBox="0 0 24 24"
+																stroke="currentColor"
+															>
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	strokeWidth={2}
+																	d="M19 9l-7 7-7-7"
+																/>
 															</svg>
 														</button>
 														<button
@@ -278,8 +312,18 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 															className="p-1 rounded bg-green-900/30 hover:bg-green-800/50 text-green-300"
 															title="Edit this paragraph"
 														>
-															<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+															<svg
+																className="w-3 h-3"
+																fill="none"
+																viewBox="0 0 24 24"
+																stroke="currentColor"
+															>
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	strokeWidth={2}
+																	d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+																/>
 															</svg>
 														</button>
 														<button
@@ -287,8 +331,18 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 															className="p-1 rounded bg-red-900/30 hover:bg-red-800/50 text-red-300"
 															title="Delete paragraph"
 														>
-															<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+															<svg
+																className="w-3 h-3"
+																fill="none"
+																viewBox="0 0 24 24"
+																stroke="currentColor"
+															>
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	strokeWidth={2}
+																	d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+																/>
 															</svg>
 														</button>
 													</>
@@ -299,7 +353,11 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 											origPara={origPara}
 											locPara={locPara}
 											isEditing={editingParagraph?.paragraphIndex === index}
-											editText={editingParagraph?.paragraphIndex === index ? editingParagraph.text : undefined}
+											editText={
+												editingParagraph?.paragraphIndex === index
+													? editingParagraph.text
+													: undefined
+											}
 											onTextChange={handleTextChange}
 										/>
 									</div>
@@ -314,7 +372,9 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 							{changedParagraphs.map(({ index, origPara, locPara }) => (
 								<div key={index} className="border border-border rounded-lg bg-[#1a1a1f]">
 									<div className="p-4 border-b border-border/50 flex items-center gap-3">
-										<span className="px-2 py-0.5 text-xs font-mono bg-primary/20 text-primary rounded">#{index + 1}</span>
+										<span className="px-2 py-0.5 text-xs font-mono bg-primary/20 text-primary rounded">
+											#{index + 1}
+										</span>
 										<span className="text-sm text-muted-foreground">Changed paragraph</span>
 									</div>
 									<div className="grid grid-cols-2">
@@ -331,11 +391,12 @@ export default function DiffViewComponent({ document, onApprove, onReject, onBac
 													origPara={origPara}
 													locPara={locPara}
 													isEditing={editingParagraph?.paragraphIndex === index}
-													editText={editingParagraph?.paragraphIndex === index ? editingParagraph.text : undefined}
-													onStartEdit={() => handleStartEdit(index, locPara)}
+													editText={
+														editingParagraph?.paragraphIndex === index
+															? editingParagraph.text
+															: undefined
+													}
 													onTextChange={handleTextChange}
-													onSave={handleSaveEdit}
-													onCancel={handleCancelEdit}
 												/>
 											</div>
 										</div>

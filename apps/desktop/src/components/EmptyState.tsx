@@ -1,3 +1,4 @@
+import { Upload } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -6,7 +7,7 @@ interface EmptyStateProps {
 	onSelectFiles?: () => void
 }
 
-const ALLOWED_EXTENSIONS = ['pdf', 'md', 'markdown']
+const ALLOWED_EXTENSIONS = ['pdf', 'md', 'markdown'] as const
 
 function getFileExtension(filePath: string): string {
 	const parts = filePath.split('.')
@@ -15,7 +16,7 @@ function getFileExtension(filePath: string): string {
 
 function isValidFile(filePath: string): boolean {
 	const ext = getFileExtension(filePath)
-	return ALLOWED_EXTENSIONS.includes(ext)
+	return ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])
 }
 
 export default function EmptyState({ onFilesAdded, onSelectFiles }: EmptyStateProps) {
@@ -60,9 +61,7 @@ export default function EmptyState({ onFilesAdded, onSelectFiles }: EmptyStatePr
 			const invalidFiles = filePaths.filter((p) => !isValidFile(p))
 
 			if (invalidFiles.length > 0) {
-				const names = invalidFiles
-					.map((p) => p.split('/').pop() || p)
-					.join(', ')
+				const names = invalidFiles.map((p) => p.split('/').pop() || p).join(', ')
 				toast.error(`Invalid files skipped: ${names}`)
 			}
 
@@ -89,29 +88,12 @@ export default function EmptyState({ onFilesAdded, onSelectFiles }: EmptyStatePr
 				style={{ minWidth: '400px', minHeight: '300px' }}
 				onClick={handleClick}
 			>
-				<svg
-					className={`w-20 h-20 mb-6 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`}
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-					aria-hidden="true"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth={1.5}
-						d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-					/>
-				</svg>
+				<Upload className={`w-20 h-20 mb-6 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
 				<p className={`text-xl mb-2 ${isDragging ? 'text-primary' : ''}`}>
 					{isDragging ? 'Drop files here' : 'No documents loaded'}
 				</p>
-				<p className="text-sm text-muted-foreground">
-					Click to browse or drag and drop PDF/MD files
-				</p>
-				<p className="text-xs text-muted-foreground mt-2">
-					Accepted formats: .pdf, .md, .markdown
-				</p>
+				<p className="text-sm text-muted-foreground">Click to browse or drag and drop PDF/MD files</p>
+				<p className="text-xs text-muted-foreground mt-2">Accepted formats: .pdf, .md, .markdown</p>
 			</div>
 		</div>
 	)

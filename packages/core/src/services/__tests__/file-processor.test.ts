@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { DocumentInput } from '../../types'
 import { getFileType, getMdFilePath, processFile } from '../file-processor'
 
 const mockGenerate = vi.fn()
@@ -11,7 +10,7 @@ vi.mock('../openai-client', () => ({
 }))
 
 vi.mock('../../utils/chunk', () => ({
-	chunkText: vi.fn((text: string, chunkSize: number, overlapSize: number) => {
+	chunkText: vi.fn((text: string, chunkSize: number, _overlapSize: number) => {
 		if (text.length === 0) return []
 		const sentences = text.split(/(?<=[.!?])\s+/)
 		if (sentences.length === 1) {

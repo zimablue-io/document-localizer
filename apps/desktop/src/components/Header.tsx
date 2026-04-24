@@ -1,7 +1,41 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
-import { ChevronDown, History } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
+import { ChevronDown, History, RefreshCw } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+// Custom hook for connection checking
+function useConnectionCheck(apiUrl: string | undefined, refreshKey?: number) {
+	const [isOnline, setIsOnline] = useState(false)
+	const [isChecking, setIsChecking] = useState(false)
+
+	const check = useCallback(async () => {
+		if (!apiUrl) {
+			setIsOnline(false)
+			return
+		}
+		setIsChecking(true)
+		try {
+			const controller = new AbortController()
+			const timeoutId = setTimeout(() => controller.abort(), 3000)
+			const response = await fetch(`${apiUrl}/models`, {
+				method: 'GET',
+				signal: controller.signal,
+			})
+			clearTimeout(timeoutId)
+			setIsOnline(response.ok)
+		} catch {
+			setIsOnline(false)
+		} finally {
+			setIsChecking(false)
+		}
+	}, [apiUrl])
+
+	useEffect(() => {
+		void check()
+	}, [check, refreshKey])
+
+	return { isOnline, isChecking, retry: check }
+}
 
 interface ModelConfig {
 	id: string
@@ -9,11 +43,12 @@ interface ModelConfig {
 }
 
 interface HeaderProps {
-	documents: DocumentState[]
+	sourceDocuments: { id: string; name: string; sourceLocale?: string; targetLocale?: string }[]
 	models?: ModelConfig[]
 	activeModelId?: string
 	apiUrl?: string
 	isConfigured: boolean
+	connectionRefreshKey?: number
 	onSelectFiles: () => void
 	onProcessAll: () => void
 	onOpenSettings: () => void
@@ -21,13 +56,28 @@ interface HeaderProps {
 	onModelChange?: (modelId: string) => void
 }
 
-export default function Header({ documents, models, activeModelId, apiUrl, isConfigured, onSelectFiles, onProcessAll, onOpenSettings, onOpenHistory, onModelChange }: HeaderProps) {
-	const idleCount = documents.filter((d) => d.status === 'idle').length
+export default function Header({
+	sourceDocuments,
+	models,
+	activeModelId,
+	apiUrl,
+	isConfigured,
+	connectionRefreshKey,
+	onSelectFiles,
+	onProcessAll,
+	onOpenSettings,
+	onOpenHistory,
+	onModelChange,
+}: HeaderProps) {
+	const readyToProcessCount = sourceDocuments.filter((d) => d.sourceLocale && d.targetLocale).length
+	const processingCount = 0
 	const [showDropdown, setShowDropdown] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement>(null)
 
-	const activeModel = models?.find(m => m.id === activeModelId) || models?.[0]
-	const shortModel = activeModel?.name?.split(':')[0] + ':' + activeModel?.name?.split(':')[1] || ''
+	const { isOnline, isChecking, retry: handleRetryConnection } = useConnectionCheck(apiUrl, connectionRefreshKey)
+
+	const activeModel = models?.find((m) => m.id === activeModelId) || models?.[0]
+	const shortModel = `${activeModel?.name?.split(':')[0]}:${activeModel?.name?.split(':')[1]}` || ''
 
 	// Close dropdown when clicking outside
 	useEffect(() => {
@@ -47,11 +97,40 @@ export default function Header({ documents, models, activeModelId, apiUrl, isCon
 				{activeModel && (
 					<div className="relative" ref={dropdownRef}>
 						<button
-							onClick={() => setShowDropdown(!showDropdown)}
-							className="flex items-center gap-1.5 px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors"
-							title={`Model: ${activeModel.name}\nAPI: ${apiUrl}\nClick to change`}
+							onClick={() => {
+								if (processingCount === 0) {
+									setShowDropdown(!showDropdown)
+								}
+							}}
+							className={`flex items-center gap-1.5 px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors ${
+								processingCount > 0 ? 'cursor-default' : ''
+							}`}
+							title={`Model: ${activeModel.name}\nAPI: ${apiUrl}\n${processingCount > 0 ? 'Processing documents...' : 'Click to change model'}`}
 						>
 							<span>{shortModel || activeModel.name}</span>
+							<div className="relative group">
+								<span
+									className={`block w-2.5 h-2.5 rounded-full transition-opacity ${
+										processingCount > 0
+											? 'bg-blue-500 animate-pulse'
+											: isChecking
+												? 'bg-yellow-500 animate-pulse'
+												: isOnline
+													? 'bg-green-500'
+													: 'bg-red-500'
+									}`}
+								/>
+								<button
+									onClick={(e) => {
+										e.stopPropagation()
+										void handleRetryConnection()
+									}}
+									className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+									title="Test connection"
+								>
+									<RefreshCw className={`w-3 h-3 ${isChecking ? 'animate-spin' : ''}`} />
+								</button>
+							</div>
 							<ChevronDown className="w-3 h-3" />
 						</button>
 						{showDropdown && models && models.length > 0 && (
@@ -72,8 +151,18 @@ export default function Header({ documents, models, activeModelId, apiUrl, isCon
 									>
 										<span className="truncate">{model.name}</span>
 										{model.id === activeModelId && (
-											<svg className="w-4 h-4 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+											<svg
+												className="w-4 h-4 text-primary shrink-0"
+												fill="none"
+												viewBox="0 0 24 24"
+												stroke="currentColor"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													strokeWidth={2}
+													d="M5 13l4 4L19 7"
+												/>
 											</svg>
 										)}
 									</button>
@@ -105,8 +194,8 @@ export default function Header({ documents, models, activeModelId, apiUrl, isCon
 						<Button variant="secondary" onClick={onSelectFiles}>
 							Select Files
 						</Button>
-						<Button onClick={onProcessAll} disabled={idleCount === 0}>
-							Process All ({idleCount})
+						<Button onClick={onProcessAll} disabled={readyToProcessCount === 0}>
+							Process All ({readyToProcessCount})
 						</Button>
 					</>
 				)}

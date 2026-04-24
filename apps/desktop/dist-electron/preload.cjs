@@ -21,6 +21,10 @@ electron_1.contextBridge.exposeInMainWorld('electron', {
     addHistory: (entry) => electron_1.ipcRenderer.invoke('history:add', entry),
     updateHistory: (id, updates) => electron_1.ipcRenderer.invoke('history:update', id, updates),
     clearHistory: () => electron_1.ipcRenderer.invoke('history:clear'),
-    loadDocuments: () => electron_1.ipcRenderer.invoke('documents:load'),
-    saveDocuments: (documents) => electron_1.ipcRenderer.invoke('documents:save', documents),
+    loadUploaded: () => electron_1.ipcRenderer.invoke('uploaded:load'),
+    saveUploaded: (documents) => electron_1.ipcRenderer.invoke('uploaded:save', documents),
+    loadTasks: () => electron_1.ipcRenderer.invoke('tasks:load'),
+    saveTasks: (documents) => electron_1.ipcRenderer.invoke('tasks:save', documents),
+    loadProcessed: () => electron_1.ipcRenderer.invoke('processed:load'),
+    saveProcessed: (documents) => electron_1.ipcRenderer.invoke('processed:save', documents),
 });

@@ -13,7 +13,7 @@ vi.mock('../openai-client', () => ({
 
 // Mock chunkText
 vi.mock('../../utils/chunk', () => ({
-	chunkText: vi.fn((text: string, chunkSize: number, overlapSize: number) => {
+	chunkText: vi.fn((text: string, chunkSize: number, _overlapSize: number) => {
 		if (text.length === 0) return []
 		// Simple chunking for testing - split by sentences or by chunk size
 		const sentences = text.split(/(?<=[.!?])\s+/)

@@ -7,8 +7,8 @@ describe('convertPdfToMarkdown', () => {
 	})
 
 	it('should accept Uint8Array input', () => {
-		const uint8Array = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x2d]) // %PDF--
-		const callback = (current: number, total: number) => {}
+		const _uint8Array = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x2d]) // %PDF--
+		const _callback = (_current: number, _total: number) => {}
 
 		expect(typeof convertPdfToMarkdown).toBe('function')
 	})
@@ -28,14 +28,14 @@ describe('convertPdfToMarkdown', () => {
 	it('should accept valid PDF header', async () => {
 		// Create a minimal valid PDF header
 		const header = '%PDF-1.4\n'
-		const data = new TextEncoder().encode(header)
+		const _data = new TextEncoder().encode(header)
 
 		// Should not throw on header check
 		expect(typeof convertPdfToMarkdown).toBe('function')
 	})
 
 	it('should work with callback function', () => {
-		const data = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x2d]) // %PDF--
+		const _data = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x2d]) // %PDF--
 		const callback = (current: number, total: number) => {
 			expect(typeof current).toBe('number')
 			expect(typeof total).toBe('number')
@@ -45,14 +45,14 @@ describe('convertPdfToMarkdown', () => {
 	})
 
 	it('should handle undefined callback', () => {
-		const data = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x2d])
+		const _data = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x2d])
 
 		expect(typeof convertPdfToMarkdown).toBe('function')
 	})
 
 	it('should accept ArrayBuffer input', async () => {
 		const data = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x2d])
-		const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+		const _arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
 
 		expect(typeof convertPdfToMarkdown).toBe('function')
 	})

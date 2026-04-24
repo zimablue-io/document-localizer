@@ -11,8 +11,8 @@
  * Run with: cd packages/core && npx vitest run src/__tests__/diff-view-rendering.test.ts
  */
 
+import { diffWords } from 'diff'
 import { describe, expect, it } from 'vitest'
-import { diffWords, type Change } from 'diff'
 
 // Replicate the rendering logic for testing
 function getOriginalColumnParts(orig: string, loc: string) {

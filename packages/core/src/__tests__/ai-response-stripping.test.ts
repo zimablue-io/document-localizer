@@ -82,7 +82,7 @@ describe('AI Response Stripping', () => {
 		})
 
 		it('should remove "Here is the translation..."', () => {
-			const input = "Here is the translation of the markdown:\n\nTranslated text"
+			const input = 'Here is the translation of the markdown:\n\nTranslated text'
 			const result = stripAIResponse(input)
 			expect(result).toBe('Translated text')
 		})

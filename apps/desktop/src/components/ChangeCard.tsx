@@ -69,8 +69,18 @@ export default function ChangeCard({ change, index, total, onApprove, onReject, 
 
 				{/* Arrow */}
 				<div className="flex justify-center">
-					<svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+					<svg
+						className="w-5 h-5 text-muted-foreground"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M19 14l-7 7m0 0l-7-7m7 7V3"
+						/>
 					</svg>
 				</div>
 
@@ -89,7 +99,7 @@ export default function ChangeCard({ change, index, total, onApprove, onReject, 
 					<div>
 						<p className="text-xs text-muted-foreground mb-1">Context:</p>
 						<p className="text-sm text-muted-foreground italic border-l-2 border-muted pl-2">
-							{change.context.length > 200 ? change.context.slice(0, 200) + '...' : change.context}
+							{change.context.length > 200 ? `${change.context.slice(0, 200)}...` : change.context}
 						</p>
 					</div>
 				)}
@@ -135,7 +145,12 @@ export default function ChangeCard({ change, index, total, onApprove, onReject, 
 					</Button>
 					<Button size="sm" variant="destructive" onClick={handleReject}>
 						<svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M6 18L18 6M6 6l12 12"
+							/>
 						</svg>
 						Reject
 					</Button>

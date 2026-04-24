@@ -50,7 +50,7 @@ function splitIntoParagraphs(text: string): string[] {
 			paragraphs.push(current.trim())
 			current = ''
 		} else if (line.trim() !== '') {
-			current = current ? current + '\n' + line : line
+			current = current ? `${current}\n${line}` : line
 		}
 	}
 	if (current.trim()) {
@@ -301,7 +301,7 @@ describe('Integration: Full Pipeline Simulation', () => {
 			'"Go ahead."',
 			'"Thanks," he said.',
 		]
-		const original = originalParagraphs.join('\n\n')
+		const _original = originalParagraphs.join('\n\n')
 
 		// Simulate AI response (with markers and stripped)
 		const aiResponse = `---BEGIN TEXT---

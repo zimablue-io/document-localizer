@@ -71,7 +71,7 @@ export function formatError(error: unknown, fallbackMessage = 'Something went wr
 
 		// Truncate long messages
 		if (message.length > 200) {
-			return message.substring(0, 200) + '...'
+			return `${message.substring(0, 200)}...`
 		}
 
 		return message || fallbackMessage
