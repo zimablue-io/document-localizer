@@ -1,36 +1,97 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
-import { History } from 'lucide-react'
+import { ChevronDown, History } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+
+interface ModelConfig {
+	id: string
+	name: string
+}
 
 interface HeaderProps {
 	documents: DocumentState[]
-	model?: string
+	models?: ModelConfig[]
+	activeModelId?: string
 	apiUrl?: string
 	isConfigured: boolean
 	onSelectFiles: () => void
 	onProcessAll: () => void
 	onOpenSettings: () => void
 	onOpenHistory: () => void
+	onModelChange?: (modelId: string) => void
 }
 
-export default function Header({ documents, model, apiUrl, isConfigured, onSelectFiles, onProcessAll, onOpenSettings, onOpenHistory }: HeaderProps) {
+export default function Header({ documents, models, activeModelId, apiUrl, isConfigured, onSelectFiles, onProcessAll, onOpenSettings, onOpenHistory, onModelChange }: HeaderProps) {
 	const idleCount = documents.filter((d) => d.status === 'idle').length
+	const [showDropdown, setShowDropdown] = useState(false)
+	const dropdownRef = useRef<HTMLDivElement>(null)
 
-	// Extract short model name from full model string (e.g., "llama:3.2:3b-instruct" -> "llama:3.2")
-	const shortModel = model?.split(':')[0] + ':' + model?.split(':')[1]
+	const activeModel = models?.find(m => m.id === activeModelId) || models?.[0]
+	const shortModel = activeModel?.name?.split(':')[0] + ':' + activeModel?.name?.split(':')[1] || ''
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		function handleClickOutside(event: MouseEvent) {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+				setShowDropdown(false)
+			}
+		}
+		document.addEventListener('mousedown', handleClickOutside)
+		return () => document.removeEventListener('mousedown', handleClickOutside)
+	}, [])
 
 	return (
 		<header className="border-b border-border px-6 py-4 flex items-center justify-between">
 			<div className="flex items-center gap-4">
 				<h1 className="text-xl font-semibold">Document Localizer</h1>
-				{model && (
-					<button
-						onClick={onOpenSettings}
-						className="px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors"
-						title={`Model: ${model}\nAPI: ${apiUrl}\nClick to change`}
-					>
-						{shortModel || model}
-					</button>
+				{activeModel && (
+					<div className="relative" ref={dropdownRef}>
+						<button
+							onClick={() => setShowDropdown(!showDropdown)}
+							className="flex items-center gap-1.5 px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors"
+							title={`Model: ${activeModel.name}\nAPI: ${apiUrl}\nClick to change`}
+						>
+							<span>{shortModel || activeModel.name}</span>
+							<ChevronDown className="w-3 h-3" />
+						</button>
+						{showDropdown && models && models.length > 0 && (
+							<div className="absolute left-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-xl py-1 min-w-[180px]">
+								<div className="px-3 py-1.5 text-xs text-muted-foreground border-b border-border">
+									Select Model
+								</div>
+								{models.map((model) => (
+									<button
+										key={model.id}
+										className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+											model.id === activeModelId ? 'bg-primary/10 text-primary' : ''
+										}`}
+										onClick={() => {
+											onModelChange?.(model.id)
+											setShowDropdown(false)
+										}}
+									>
+										<span className="truncate">{model.name}</span>
+										{model.id === activeModelId && (
+											<svg className="w-4 h-4 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+											</svg>
+										)}
+									</button>
+								))}
+								<div className="border-t border-border pt-1 mt-1">
+									<button
+										className="w-full px-3 py-2 text-left text-sm hover:bg-muted text-muted-foreground"
+										onClick={() => {
+											setShowDropdown(false)
+											onOpenSettings()
+										}}
+									>
+										Manage Models...
+									</button>
+								</div>
+							</div>
+						)}
+					</div>
 				)}
 			</div>
 			<div className="flex gap-2">

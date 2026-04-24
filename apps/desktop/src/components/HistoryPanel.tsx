@@ -2,7 +2,7 @@ import { Button } from '@doclocalizer/ui'
 import { formatDistanceToNow } from 'date-fns'
 import { Clock, FileText, Trash2 } from 'lucide-react'
 import { ScrollArea } from '@doclocalizer/ui'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@doclocalizer/ui'
+import { Sheet, SheetContent } from '@doclocalizer/ui'
 
 interface HistoryEntry {
 	id: string
@@ -60,20 +60,25 @@ export default function HistoryPanel({ history, isOpen, onClose, onClear }: Hist
 
 	return (
 		<Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<SheetContent position="right" className="w-full sm:max-w-md">
-				<SheetHeader>
-					<div className="flex items-center justify-between">
-						<SheetTitle>Activity History</SheetTitle>
+			<SheetContent position="right" showCloseButton={false} className="w-full sm:max-w-md flex flex-col">
+				<div className="flex items-center justify-between">
+					<h2 className="text-lg font-semibold">Activity History</h2>
+					<div className="flex items-center gap-2">
 						{history.length > 0 && (
 							<Button variant="ghost" size="sm" onClick={handleClear}>
 								<Trash2 className="w-4 h-4 mr-1" />
 								Clear
 							</Button>
 						)}
+						<Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
+							<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+							</svg>
+						</Button>
 					</div>
-				</SheetHeader>
+				</div>
 
-				<ScrollArea className="flex-1 mt-4 -mx-4 px-4">
+				<ScrollArea className="flex-1 -mx-4 px-4 min-h-0">
 					{history.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
 							<Clock className="w-12 h-12 mb-4 opacity-50" />

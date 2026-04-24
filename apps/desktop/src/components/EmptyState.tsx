@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 interface EmptyStateProps {
 	onFilesAdded: (paths: string[]) => void
+	onSelectFiles?: () => void
 }
 
 const ALLOWED_EXTENSIONS = ['pdf', 'md', 'markdown']
@@ -17,8 +18,12 @@ function isValidFile(filePath: string): boolean {
 	return ALLOWED_EXTENSIONS.includes(ext)
 }
 
-export default function EmptyState({ onFilesAdded }: EmptyStateProps) {
+export default function EmptyState({ onFilesAdded, onSelectFiles }: EmptyStateProps) {
 	const [isDragging, setIsDragging] = useState(false)
+
+	const handleClick = useCallback(() => {
+		onSelectFiles?.()
+	}, [onSelectFiles])
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
 		e.preventDefault()
@@ -76,12 +81,13 @@ export default function EmptyState({ onFilesAdded }: EmptyStateProps) {
 			onDrop={handleDrop}
 		>
 			<div
-				className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 transition-colors ${
+				className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 transition-colors cursor-pointer ${
 					isDragging
 						? 'border-primary bg-primary/10'
-						: 'border-muted-foreground/30 bg-transparent'
+						: 'border-muted-foreground/30 bg-transparent hover:border-primary/50 hover:bg-primary/5'
 				}`}
 				style={{ minWidth: '400px', minHeight: '300px' }}
+				onClick={handleClick}
 			>
 				<svg
 					className={`w-20 h-20 mb-6 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`}
@@ -101,7 +107,7 @@ export default function EmptyState({ onFilesAdded }: EmptyStateProps) {
 					{isDragging ? 'Drop files here' : 'No documents loaded'}
 				</p>
 				<p className="text-sm text-muted-foreground">
-					Drag and drop PDF or MD files here, or use the "Select Files" button
+					Click to browse or drag and drop PDF/MD files
 				</p>
 				<p className="text-xs text-muted-foreground mt-2">
 					Accepted formats: .pdf, .md, .markdown

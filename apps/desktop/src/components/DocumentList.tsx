@@ -1,5 +1,5 @@
 import type { DocumentState } from '@doclocalizer/core'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button } from '@doclocalizer/ui'
 import { ChevronDown, FileText, FileType, Clock, AlertCircle, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 
@@ -79,6 +79,21 @@ export default function DocumentList({
 }: DocumentListProps) {
 	const [isDragging, setIsDragging] = useState(false)
 	const [showExportMenu, setShowExportMenu] = useState<string | null>(null)
+	const exportMenuRef = useRef<HTMLDivElement>(null)
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		if (!showExportMenu) return
+
+		const handleClick = (e: MouseEvent) => {
+			if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+				setShowExportMenu(null)
+			}
+		}
+
+		document.addEventListener('mousedown', handleClick)
+		return () => document.removeEventListener('mousedown', handleClick)
+	}, [showExportMenu])
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
 		e.preventDefault()
@@ -201,11 +216,10 @@ export default function DocumentList({
 											<Button onClick={() => onReview(doc.id)}>Review</Button>
 										)}
 										{doc.status === 'approved' && (
-											<div className="relative">
+											<div className="relative" ref={exportMenuRef}>
 												<Button
 													variant="default"
-													onClick={() => onExport?.(doc.id, 'md')}
-													onMouseEnter={() => setShowExportMenu(doc.id)}
+													onClick={() => setShowExportMenu(showExportMenu === doc.id ? null : doc.id)}
 												>
 													Export
 													<ChevronDown className="ml-1 w-4 h-4" />
@@ -213,7 +227,6 @@ export default function DocumentList({
 												{showExportMenu === doc.id && (
 													<div
 														className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-lg shadow-xl py-1 min-w-[220px]"
-														onMouseLeave={() => setShowExportMenu(null)}
 													>
 														<button
 															className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted flex items-center gap-3"

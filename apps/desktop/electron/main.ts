@@ -86,7 +86,7 @@ ipcMain.handle('dialog:handleFileDrop', async (_event, filePaths: string[]) => {
 ipcMain.handle('dialog:openFile', async (_event, options) => {
 	if (!mainWindow) return null
 	const result = await dialog.showOpenDialog(mainWindow, {
-		multiple: true,
+		properties: ['openFile', 'multiSelections'],
 		filters: [{ name: 'Documents', extensions: ['pdf', 'md', 'markdown'] }],
 		...options,
 	})

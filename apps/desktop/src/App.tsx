@@ -52,11 +52,16 @@ interface Locale {
 	name: string
 }
 
+interface ModelConfig {
+	id: string
+	name: string
+}
+
 interface Settings {
 	apiUrl: string
-	model: string
+	models: ModelConfig[]
+	activeModelId: string
 	chunkSize: string
-	modelContext: 'SMALL' | 'MEDIUM' | 'LARGE' | 'XLARGE'
 	overlapSize: string
 	sourceLocale: string
 	targetLocale: string
@@ -69,13 +74,31 @@ async function loadSettings(): Promise<Settings> {
 		const result = await window.electron.loadSettings()
 		if (result && typeof result === 'object') {
 			const r = result as Record<string, unknown>
-			const model = (r.model as string) || DEFAULT_MODEL
-			const modelContext = (r.modelContext as 'SMALL' | 'MEDIUM' | 'LARGE' | 'XLARGE') || estimateContextSize(model)
+			
+			// Handle legacy single model or new models array
+			const existingModels = (r.models as ModelConfig[]) || []
+			const legacyModel = r.model as string
+			
+			// If we have a legacy model but no models array, convert
+			let models = existingModels
+			let activeModelId = (r.activeModelId as string) || ''
+			
+			if (legacyModel && models.length === 0) {
+				const newModel: ModelConfig = {
+					id: crypto.randomUUID(),
+					name: legacyModel
+				}
+				models = [newModel]
+				activeModelId = newModel.id
+			} else if (models.length > 0 && !activeModelId) {
+				activeModelId = models[0].id
+			}
+			
 			return {
 				apiUrl: (r.apiUrl as string) || DEFAULT_API_URL,
-				model,
+				models,
+				activeModelId,
 				chunkSize: (r.chunkSize as string) || '1000',
-				modelContext,
 				overlapSize: (r.overlapSize as string) || '100',
 				sourceLocale: (r.sourceLocale as string) || '',
 				targetLocale: (r.targetLocale as string) || '',
@@ -87,12 +110,17 @@ async function loadSettings(): Promise<Settings> {
 	} catch (err) {
 		console.error('Error loading settings:', err)
 	}
-	const model = DEFAULT_MODEL
+	
+	// Default with one model
+	const defaultModel: ModelConfig = {
+		id: crypto.randomUUID(),
+		name: DEFAULT_MODEL
+	}
 	return {
 		apiUrl: DEFAULT_API_URL,
-		model,
+		models: [defaultModel],
+		activeModelId: defaultModel.id,
 		chunkSize: '1000',
-		modelContext: estimateContextSize(model),
 		overlapSize: '100',
 		sourceLocale: '',
 		targetLocale: '',
@@ -195,7 +223,11 @@ export default function App() {
 
 	// Connection test removed - errors show when processing starts instead
 
-	const isConfigured = settings?.apiUrl && settings?.model
+	const isConfigured = settings?.apiUrl && settings?.models?.length
+
+	// Get active model name
+	const activeModelName = settings?.models?.find(m => m.id === settings.activeModelId)?.name || settings?.models?.[0]?.name || ''
+	const currentModel = activeModelName
 
 	const addFilesToDocuments = useCallback(
 		(paths: string[]) => {
@@ -323,7 +355,7 @@ export default function App() {
 					const result = await window.electron.generateAI({
 						url: `${settings!.apiUrl}/chat/completions`,
 						body: {
-							model: settings!.model,
+							model: currentModel,
 							messages: [{ role: 'user', content: userContent }],
 							temperature: 0.2,
 							max_tokens: 4096,
@@ -668,13 +700,15 @@ export default function App() {
 
 			<Header
 				documents={documents}
-				model={settings?.model}
+				models={settings?.models}
+				activeModelId={settings?.activeModelId}
 				apiUrl={settings?.apiUrl}
 				isConfigured={!!isConfigured}
 				onSelectFiles={handleSelectFiles}
 				onProcessAll={handleProcessAll}
 				onOpenSettings={() => setShowSettings(true)}
 				onOpenHistory={() => setShowHistory(true)}
+				onModelChange={(modelId) => setSettings(prev => prev ? { ...prev, activeModelId: modelId } : null)}
 			/>
 
 			<main className="flex-1 p-6 overflow-auto">
@@ -691,7 +725,7 @@ export default function App() {
 					/>
 				)}
 
-				{!selectedDocId && documents.length === 0 && <EmptyState onFilesAdded={addFilesToDocuments} />}
+				{!selectedDocId && documents.length === 0 && <EmptyState onFilesAdded={addFilesToDocuments} onSelectFiles={handleSelectFiles} />}
 
 				{!selectedDocId && documents.length > 0 && (
 					<DocumentList

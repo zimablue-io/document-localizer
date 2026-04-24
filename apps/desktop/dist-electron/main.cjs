@@ -78,7 +78,7 @@ electron_1.ipcMain.handle('dialog:openFile', async (_event, options) => {
     if (!mainWindow)
         return null;
     const result = await electron_1.dialog.showOpenDialog(mainWindow, {
-        multiple: true,
+        properties: ['openFile', 'multiSelections'],
         filters: [{ name: 'Documents', extensions: ['pdf', 'md', 'markdown'] }],
         ...options,
     });

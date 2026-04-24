@@ -14,15 +14,22 @@ import {
 	TabsTrigger,
 } from '@doclocalizer/ui'
 import { useState } from 'react'
+import { Plus, Trash2, Edit2, Check } from 'lucide-react'
 
 interface Locale {
 	code: string
 	name: string
 }
 
+interface ModelConfig {
+	id: string
+	name: string
+}
+
 interface Settings {
 	apiUrl: string
-	model: string
+	models: ModelConfig[]
+	activeModelId: string
 	chunkSize: string
 	overlapSize: string
 	targetLocale: string
@@ -78,9 +85,56 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 	const [editingLocale, setEditingLocale] = useState<Locale | null>(null)
 	const [editCode, setEditCode] = useState('')
 	const [editName, setEditName] = useState('')
+	
+	// Model management state
+	const [newModelName, setNewModelName] = useState('')
+	const [editingModelId, setEditingModelId] = useState<string | null>(null)
+	const [editModelName, setEditModelName] = useState('')
 
 	const handleResetPrompt = () => {
 		onChange({ ...settings, customPrompt: DEFAULT_PROMPT })
+	}
+
+	const handleAddModel = () => {
+		if (newModelName.trim()) {
+			const newModel: ModelConfig = {
+				id: crypto.randomUUID(),
+				name: newModelName.trim()
+			}
+			const updatedModels = [...settings.models, newModel]
+			onChange({ ...settings, models: updatedModels, activeModelId: updatedModels[0].id })
+			setNewModelName('')
+		}
+	}
+
+	const handleRemoveModel = (id: string) => {
+		const updatedModels = settings.models.filter(m => m.id !== id)
+		let newActiveId = settings.activeModelId
+		if (settings.activeModelId === id) {
+			newActiveId = updatedModels[0]?.id || ''
+		}
+		onChange({ ...settings, models: updatedModels, activeModelId: newActiveId })
+	}
+
+	const handleStartEditModel = (model: ModelConfig) => {
+		setEditingModelId(model.id)
+		setEditModelName(model.name)
+	}
+
+	const handleSaveEditModel = () => {
+		if (editingModelId && editModelName.trim()) {
+			const updatedModels = settings.models.map(m =>
+				m.id === editingModelId ? { ...m, name: editModelName.trim() } : m
+			)
+			onChange({ ...settings, models: updatedModels })
+			setEditingModelId(null)
+			setEditModelName('')
+		}
+	}
+
+	const handleCancelEditModel = () => {
+		setEditingModelId(null)
+		setEditModelName('')
 	}
 
 	const handleAddLocale = () => {
@@ -287,17 +341,80 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 									id="api-url"
 									value={settings.apiUrl}
 									onChange={(e) => onChange({ ...settings, apiUrl: e.target.value })}
-									placeholder="http://localhost:11434/v1"
+									placeholder="http://localhost:8080/v1"
 								/>
 							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="model">Model</Label>
-								<Input
-									id="model"
-									value={settings.model}
-									onChange={(e) => onChange({ ...settings, model: e.target.value })}
-									placeholder="qwen2.5:7b-instruct"
-								/>
+							
+							<div className="border-t border-border pt-4">
+								<Label className="mb-2 block">Models</Label>
+								<div className="flex gap-2 mb-3">
+									<Input
+										value={newModelName}
+										onChange={(e) => setNewModelName(e.target.value)}
+										placeholder="Model name (e.g., llama:3.2:3b-instruct)"
+										className="flex-1"
+										onKeyDown={(e) => e.key === 'Enter' && handleAddModel()}
+									/>
+									<Button onClick={handleAddModel} disabled={!newModelName.trim()}>
+										<Plus className="w-4 h-4 mr-1" />
+										Add
+									</Button>
+								</div>
+								
+								{settings.models.length > 0 && (
+									<div className="space-y-2">
+										{settings.models.map((model) => (
+											<div key={model.id} className="px-3 py-2 bg-secondary rounded-lg">
+												{editingModelId === model.id ? (
+													<div className="space-y-2">
+														<div className="flex gap-2">
+															<Input
+																value={editModelName}
+																onChange={(e) => setEditModelName(e.target.value)}
+																placeholder="Model name"
+																className="flex-1"
+															/>
+														</div>
+														<div className="flex gap-2 justify-end">
+															<Button variant="outline" size="sm" onClick={handleCancelEditModel}>
+																Cancel
+															</Button>
+															<Button size="sm" onClick={handleSaveEditModel}>
+																<Check className="w-4 h-4 mr-1" />
+																Save
+															</Button>
+														</div>
+													</div>
+												) : (
+													<div className="flex items-center justify-between">
+														<span className="flex items-center gap-2">
+															{model.name}
+															{model.id === settings.activeModelId && (
+																<span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">Active</span>
+															)}
+														</span>
+														<div className="flex gap-2">
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={() => handleStartEditModel(model)}
+															>
+																<Edit2 className="w-4 h-4" />
+															</Button>
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={() => handleRemoveModel(model.id)}
+															>
+																<Trash2 className="w-4 h-4" />
+															</Button>
+														</div>
+													</div>
+												)}
+											</div>
+										))}
+									</div>
+								)}
 							</div>
 						</TabsContent>
 
