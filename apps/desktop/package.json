@@ -1,6 +1,8 @@
 {
   "name": "@doclocalizer/desktop",
   "version": "0.1.0",
+  "description": "AI-powered document localization for privacy-conscious teams",
+  "author": "zimablue-io",
   "main": "dist-electron/main.cjs",
   "publish": {
     "provider": "github",
@@ -21,8 +23,6 @@
     "conf": "^15.1.0",
     "date-fns": "^4.1.0",
     "diff": "^9.0.0",
-    "electron": "^33.4.0",
-    "electron-builder": "^26.0.12",
     "electron-updater": "^6.3.9",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.8.0",
@@ -36,6 +36,8 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^33.4.0",
+    "electron-builder": "^26.0.12",
     "tailwindcss": "^4.2.3",
     "typescript": "^5.8.3",
     "vite": "^8.0.9"
