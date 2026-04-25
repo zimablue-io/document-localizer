@@ -9,6 +9,7 @@ import HistoryPanel from './components/HistoryPanel'
 import SettingsModal from './components/SettingsModal'
 import { contentToPdf, ExportFormat, getFileExtension } from './lib/export'
 import { formatError } from './lib/utils'
+import { ALL_LOCALES } from './lib/locales'
 
 const DEFAULT_API_URL = 'http://localhost:8080/v1'
 const DEFAULT_MODEL = 'llama:3.2:3b-instruct'
@@ -46,7 +47,7 @@ interface Settings {
 	overlapSize: string
 	sourceLocale: string
 	targetLocale: string
-	customLocales: Locale[]
+	enabledLocaleCodes: string[]
 	customPrompt?: string
 }
 
@@ -83,11 +84,11 @@ async function loadSettings(): Promise<Settings> {
 				overlapSize: (r.overlapSize as string) || '100',
 				sourceLocale: (r.sourceLocale as string) || '',
 				targetLocale: (r.targetLocale as string) || '',
-				customLocales: Array.isArray(r.customLocales)
-					? r.customLocales
-					: typeof r.customLocales === 'string'
-						? JSON.parse(r.customLocales)
-						: [],
+				enabledLocaleCodes: Array.isArray(r.enabledLocaleCodes)
+					? (r.enabledLocaleCodes as string[])
+					: typeof r.enabledLocaleCodes === 'string'
+						? JSON.parse(r.enabledLocaleCodes as string)
+						: ['en-US', 'en-GB'], // Default enabled locales
 			}
 		}
 	} catch (err) {
@@ -107,7 +108,7 @@ async function loadSettings(): Promise<Settings> {
 		overlapSize: '100',
 		sourceLocale: '',
 		targetLocale: '',
-		customLocales: [],
+		enabledLocaleCodes: ['en-US', 'en-GB'],
 	}
 }
 
@@ -833,14 +834,9 @@ export default function App() {
 						tasksDocs={tasksDocs}
 						processedDocs={processedDocs}
 						locales={
-							settings?.customLocales?.length
-								? settings.customLocales
-								: [
-										{ code: 'en-US', name: 'American English' },
-										{ code: 'en-GB', name: 'British English' },
-										{ code: 'en-AU', name: 'Australian English' },
-										{ code: 'en-NZ', name: 'New Zealand English' },
-									]
+							settings?.enabledLocaleCodes?.length
+								? ALL_LOCALES.filter((l) => settings.enabledLocaleCodes.includes(l.code))
+								: ALL_LOCALES
 						}
 						onProcess={handleProcess}
 						onReview={setSelectedOutputId}

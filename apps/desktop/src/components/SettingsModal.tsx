@@ -1,11 +1,7 @@
 import { Button, Input, Label, ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@doclocalizer/ui'
 import { Check, Edit2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-
-interface Locale {
-	code: string
-	name: string
-}
+import { ALL_LOCALES } from '../lib/locales'
 
 interface ModelConfig {
 	id: string
@@ -20,7 +16,7 @@ interface Settings {
 	overlapSize: string
 	targetLocale: string
 	sourceLocale: string
-	customLocales: Locale[]
+	enabledLocaleCodes: string[]
 	customPrompt?: string
 }
 
@@ -66,11 +62,7 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ settings, onChange, onSave, onClose }: SettingsModalProps) {
 	const [activeTab, setActiveTab] = useState<string>('locales')
-	const [newLocaleName, setNewLocaleName] = useState('')
-	const [newLocaleCode, setNewLocaleCode] = useState('')
-	const [editingLocale, setEditingLocale] = useState<Locale | null>(null)
-	const [editCode, setEditCode] = useState('')
-	const [editName, setEditName] = useState('')
+	const [localeSearch, setLocaleSearch] = useState('')
 
 	// Model management state
 	const [newModelName, setNewModelName] = useState('')
@@ -80,6 +72,24 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 	const handleResetPrompt = () => {
 		onChange({ ...settings, customPrompt: DEFAULT_PROMPT })
 	}
+
+	const toggleLocale = (code: string) => {
+		const enabled = settings.enabledLocaleCodes.includes(code)
+		if (enabled) {
+			const newEnabled = settings.enabledLocaleCodes.filter((c) => c !== code)
+			onChange({ ...settings, enabledLocaleCodes: newEnabled })
+			if (settings.sourceLocale === code) onChange({ ...settings, sourceLocale: '' })
+			if (settings.targetLocale === code) onChange({ ...settings, targetLocale: '' })
+		} else {
+			onChange({ ...settings, enabledLocaleCodes: [...settings.enabledLocaleCodes, code] })
+		}
+	}
+
+	const filteredLocales = ALL_LOCALES.filter(
+		(locale) =>
+			locale.name.toLowerCase().includes(localeSearch.toLowerCase()) ||
+			locale.code.toLowerCase().includes(localeSearch.toLowerCase())
+	)
 
 	const handleAddModel = () => {
 		if (newModelName.trim()) {
@@ -123,54 +133,6 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 		setEditModelName('')
 	}
 
-	const handleAddLocale = () => {
-		if (newLocaleCode && newLocaleName) {
-			const newLocale = { code: newLocaleCode, name: newLocaleName }
-			if (!settings.customLocales.some((l) => l.code === newLocaleCode)) {
-				onChange({ ...settings, customLocales: [...settings.customLocales, newLocale] })
-			}
-			setNewLocaleCode('')
-			setNewLocaleName('')
-		}
-	}
-
-	const handleRemoveLocale = (code: string) => {
-		onChange({ ...settings, customLocales: settings.customLocales.filter((l) => l.code !== code) })
-		if (settings.sourceLocale === code) onChange({ ...settings, sourceLocale: '' })
-		if (settings.targetLocale === code) onChange({ ...settings, targetLocale: '' })
-	}
-
-	const handleStartEdit = (locale: Locale) => {
-		setEditingLocale(locale)
-		setEditCode(locale.code)
-		setEditName(locale.name)
-	}
-
-	const handleSaveEdit = () => {
-		if (editingLocale && editCode && editName) {
-			const updatedLocales = settings.customLocales.map((l) =>
-				l.code === editingLocale.code ? { code: editCode, name: editName } : l
-			)
-			const updatedSource = settings.sourceLocale === editingLocale.code ? editCode : settings.sourceLocale
-			const updatedTarget = settings.targetLocale === editingLocale.code ? editCode : settings.targetLocale
-			onChange({
-				...settings,
-				customLocales: updatedLocales,
-				sourceLocale: updatedSource,
-				targetLocale: updatedTarget,
-			})
-			setEditingLocale(null)
-		}
-	}
-
-	const handleCancelEdit = () => {
-		setEditingLocale(null)
-		setEditCode('')
-		setEditName('')
-	}
-
-	const _allLocales = settings.customLocales
-
 	return (
 		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
 			<div className="bg-card rounded-lg border border-border p-6 w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
@@ -186,99 +148,55 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 
 					<ScrollArea className="flex-1 min-h-0 mt-4">
 						<TabsContent value="locales" className="space-y-4 pr-4">
-							<div className="mb-4">
-								<p className="text-sm text-muted-foreground">
-									Manage available locales. Each document can be processed to a different locale.
-								</p>
-							</div>
+							<p className="text-sm text-muted-foreground">
+								Select locales to enable. Enabled locales can be used as source or target for document processing.
+							</p>
 
-							<div className="border-t border-border pt-4">
-								<Label className="mb-2 block">Add Locale</Label>
-								<div className="flex gap-2">
-									<Input
-										value={newLocaleCode}
-										onChange={(e) => setNewLocaleCode(e.target.value)}
-										placeholder="Code (e.g., pt-BR)"
-										className="flex-1"
-									/>
-									<Input
-										value={newLocaleName}
-										onChange={(e) => setNewLocaleName(e.target.value)}
-										placeholder="Name (e.g., Portuguese Brazil)"
-										className="flex-1"
-									/>
-									<Button onClick={handleAddLocale} disabled={!newLocaleCode || !newLocaleName}>
-										Add
-									</Button>
-								</div>
-							</div>
+							{/* Search */}
+							<Input
+								placeholder="Search locales..."
+								value={localeSearch}
+								onChange={(e) => setLocaleSearch(e.target.value)}
+							/>
 
-							{settings.customLocales.length > 0 && (
-								<div className="space-y-2">
-									<Label>Configured Locales</Label>
-									<div className="space-y-2">
-										{settings.customLocales.map((locale) => (
-											<div key={locale.code} className="px-3 py-2 bg-secondary rounded-lg">
-												{editingLocale?.code === locale.code ? (
-													<div className="space-y-2">
-														<div className="flex gap-2">
-															<Input
-																value={editCode}
-																onChange={(e) => setEditCode(e.target.value)}
-																placeholder="Code"
-																className="flex-1"
-															/>
-															<Input
-																value={editName}
-																onChange={(e) => setEditName(e.target.value)}
-																placeholder="Name"
-																className="flex-1"
-															/>
-														</div>
-														<div className="flex gap-2 justify-end">
-															<Button
-																variant="outline"
-																size="sm"
-																onClick={handleCancelEdit}
-															>
-																Cancel
-															</Button>
-															<Button size="sm" onClick={handleSaveEdit}>
-																Save
-															</Button>
-														</div>
-													</div>
-												) : (
-													<div className="flex items-center justify-between">
-														<span>
-															{locale.name}{' '}
-															<span className="text-muted-foreground">
-																({locale.code})
-															</span>
-														</span>
-														<div className="flex gap-2">
-															<Button
-																variant="ghost"
-																size="sm"
-																onClick={() => handleStartEdit(locale)}
-															>
-																Edit
-															</Button>
-															<Button
-																variant="ghost"
-																size="sm"
-																onClick={() => handleRemoveLocale(locale.code)}
-															>
-																Remove
-															</Button>
-														</div>
-													</div>
-												)}
+							{/* Locale list */}
+							<div className="space-y-1 max-h-[300px] overflow-y-auto pr-2">
+								{filteredLocales.map((locale) => {
+									const isEnabled = settings.enabledLocaleCodes.includes(locale.code)
+									return (
+										<div
+											key={locale.code}
+											className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+												isEnabled ? 'bg-primary/10' : 'hover:bg-secondary'
+											}`}
+											onClick={() => toggleLocale(locale.code)}
+										>
+											<div
+												className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+													isEnabled
+														? 'bg-primary border-primary'
+														: 'border-muted-foreground'
+												}`}
+											>
+												{isEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
 											</div>
-										))}
-									</div>
-								</div>
-							)}
+											<div className="flex-1">
+												<span className={isEnabled ? 'text-foreground' : 'text-muted-foreground'}>
+													{locale.name}
+												</span>
+												<span className="text-xs text-muted-foreground ml-2">
+													({locale.code})
+												</span>
+											</div>
+										</div>
+									)
+								})}
+								{filteredLocales.length === 0 && (
+									<p className="text-sm text-muted-foreground text-center py-4">
+										No locales found
+									</p>
+								)}
+							</div>
 						</TabsContent>
 
 						<TabsContent value="api" className="space-y-4 pr-4">
