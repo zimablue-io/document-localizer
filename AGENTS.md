@@ -1,135 +1,89 @@
-# Document Localizer - Agent Guidelines
+# Document Localizer - Agent Guide
 
-## Architecture
+## Quick Orientation
+
+- **Project**: Electron desktop app for AI-powered document localization
+- **Stack**: React 18 + TypeScript + Tailwind CSS v4 + Electron 33
+- **Repo**: zimablue-io/document-localizer
+- **Owner**: zimablue-io
+
+## Task Routing
+
+| What You Need | Go Here |
+|---------------|---------|
+| Dev setup | `docs/CONTRIBUTING.md` |
+| Desktop app | `apps/desktop/AGENTS.md` |
+| Landing page | `apps/landing/AGENTS.md` |
+| Core logic | `packages/core/AGENTS.md` |
+| UI components | `packages/ui/AGENTS.md` |
+| License/legal | `LICENSE.md` |
+| Privacy policy | `docs/PRIVACY.md` |
+| Support info | `docs/SUPPORT.md` |
+| Security policy | `docs/SECURITY.md` |
+
+## Code Locations
 
 ```
-apps/
-├── desktop/                    # Electron + React desktop app
-│   ├── src/
-│   │   ├── App.tsx            # Main app (orchestration only)
-│   │   ├── components/        # UI components (DiffView, SettingsModal, etc.)
-│   │   ├── lib/               # Utilities (export, utils)
-│   │   ├── types/             # TypeScript declarations
-│   │   └── main.tsx          # React entry point
-│   ├── electron/              # Electron main process
-│   │   ├── main.ts            # Main process (IPC handlers, file dialogs)
-│   │   └── preload.ts         # Context bridge for renderer
-│   └── dist-electron/          # Compiled Electron (auto-generated)
-└── landing/                    # Marketing landing page (React + Vite)
-    ├── src/
-    │   ├── App.tsx            # Main app (orchestration only)
-    │   ├── components/        # Hero, Features, StepViewer, SetupGuide, Navigation
-    │   └── hooks/             # useActiveSection hook
-    └── public/images/         # App screenshots for How It Works section
+apps/desktop/src/
+├── App.tsx              # Main orchestrator
+├── components/          # UI (Header, DocumentList, DiffView, SettingsModal...)
+├── lib/                 # Business logic (locales.ts, prompts.ts, processing.ts...)
+├── hooks/               # React hooks (useDocuments.ts)
+└── types/               # TypeScript interfaces
 
-packages/
-├── core/                       # Shared business logic
-│   └── src/
-│       ├── services/            # openai-client, file-processor, localize, diff
-│       └── utils/              # chunk, change-detection, chunk-manager
-└── ui/                         # Shared UI components
-    └── src/components/ui/       # Button, Input, Dialog, etc.
+apps/desktop/electron/
+├── main.ts              # Electron main process, IPC handlers
+└── preload.ts           # Context bridge
+
+packages/core/src/
+└── services/            # openai-client, file-processor, localize, diff
 ```
 
-### Tech Stack
+## Key Constraints
 
-- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS v4
-- **Desktop**: Electron 33 (not Tauri!)
-- **Landing Page**: React 18 + Vite (port 1421)
-- **PDF Parsing**: `@doclocalizer/core` (pdfjs-dist based, runs in renderer)
-- **Settings**: JSON file stored in `app.getPath('userData')` via Electron IPC
+1. **Don't commit directly to main** - use feature branches, PRs
+2. **Run tests before finishing**: `pnpm test`
+3. **Use Biome for formatting**: `pnpm lint:fix`
+4. **Settings stored in JSON files** - no database, no conf library
+5. **All file ops go through IPC** - renderer has no direct fs access
 
-## Apps
-
-### Desktop App (`apps/desktop`)
-The main Electron desktop application for document localization.
-
-### Landing Page (`apps/landing`)
-Marketing landing page at http://localhost:1421 with:
-- Hero section with animated transformation demo
-- Features section (5 cards: Private, AI-Powered, You Control, PDF & Markdown, Open Source)
-- Interactive StepViewer with scroll-driven navigation and app screenshots
-- SetupGuide with horizontal tabs for Ollama, LM Studio, and llama.cpp
-- Floating Navigation sidebar with hover-expand labels
-
-## Key Patterns
-
-### Electron IPC Architecture
-
-Main process exposes IPC handlers in `electron/main.ts`:
-- `dialog:openFile` / `dialog:saveFile` - Native file dialogs
-- `fs:readFile` / `fs:writeTextFile` - File system operations
-- `settings:load` / `settings:save` - Settings persistence
-- `history:get` / `history:add` - History persistence
-- `ai:generate` - AI API calls via Chromium's `net.fetch`
-
-Renderer accesses via `window.electron.*` (defined in `electron/preload.ts`)
-
-### Settings Persistence
-
-- Settings stored in: `~/Library/Application Support/document-localizer/settings.json`
-- History stored in: `~/Library/Application Support/document-localizer/history.json`
-- Source documents (Uploaded) stored in: `~/Library/Application Support/document-localizer/uploaded.json`
-- Active tasks stored in: `~/Library/Application Support/document-localizer/tasks.json`
-- Processed outputs stored in: `~/Library/Application Support/document-localizer/processed.json`
-- MAX_HISTORY_ITEMS: 100
-
-### Three-Tab Architecture (Desktop)
-
-The app uses three separate lists to track documents:
-
-1. **Uploaded (Source Library)**: Permanent inventory of uploaded source files. These never change - user sets locale and clicks Process to create a new output.
-
-2. **Tasks (Active Processing)**: Shows items currently being processed (parsing, localizing, paused) or awaiting review (review status). When processing completes, item moves here for user review.
-
-3. **Processed (Completed Outputs)**: Shows approved/rejected/exported/error outputs. User can export approved items or retry errors.
-
-### Processing Flow
-
-1. User uploads files via native file dialog (PDF or .md) → files added to Uploaded tab
-2. User selects source/target locales for each file
-3. User clicks "Process" → creates NEW output entry in Tasks tab
-4. For PDF: Base64 encoded data sent to frontend → `pdfjs-dist` parses in renderer
-5. For .md: Files read directly via IPC
-6. Frontend splits markdown into chunks
-7. Each chunk sent to AI for localization (via `ai:generate` IPC)
-8. Results combined and shown in diff view (accessible via "Review" button)
-9. User approves/rejects → moves to Processed tab
-10. User can export approved items, or retry errored items
-
-## Running the Apps
+## Standard Commands
 
 ```bash
-# Development - Desktop
-cd apps/desktop && pnpm dev
-
-# Development - Landing Page
-cd apps/landing && pnpm dev
-
-# Production build - Landing Page
-cd apps/landing && pnpm build
+pnpm install              # Install deps
+pnpm dev:desktop          # Start desktop app (port 1420)
+pnpm dev:landing          # Start landing page (port 1421)
+pnpm build:desktop        # Build desktop app
+pnpm build:landing        # Build landing page
+pnpm test                 # Run all tests
+pnpm lint:fix             # Format and lint
 ```
 
-## File Naming Conventions
+## Architecture Summary
 
-- TypeScript files: PascalCase for React components, camelCase for utilities
-- Electron files: camelCase
-- Settings keys: camelCase
-- Landing page components: PascalCase (Hero.tsx, Features.tsx, etc.)
+**Desktop App**: Three-tab system (Uploaded → Tasks → Processed)
+- User uploads PDF/.md files
+- Selects locales, clicks Process
+- AI localizes chunks via local LLM
+- User reviews in diff view, approves/rejects
+- Exports approved as Markdown or PDF
 
-## Configuration Defaults (Desktop)
+**Landing Page**: Marketing site at zimablue-io.github.io/document-localizer
+- Hero with animated demo
+- Features, How It Works, Setup Guide sections
 
-- API URL: `http://localhost:8080/v1` (OpenAI-compatible)
-- Model: `llama:3.2:3b-instruct`
-- Chunk size: 1000 chars
-- Overlap: 100 chars
-- Target locale: `en-GB` (British English)
+## Modifying the Locale List
 
-## Development Notes
+The **single source of truth** for locales is `apps/desktop/src/lib/locales.ts`.
+The `ALL_LOCALES` array is exported from there - do NOT duplicate.
 
-- Settings and history use plain JSON files (no conf library)
-- PDF parsing happens in renderer via `pdfjs-dist`
-- AI calls use Electron's built-in `net.fetch` (Chromium networking)
-- All file operations go through IPC (no direct fs access in renderer)
-- Desktop Vite dev server runs on port 1420
-- Landing Vite dev server runs on port 1421
+## Version Bumping
+
+The GitHub Actions workflow handles version bumping automatically on push to main.
+Do not manually bump versions.
+
+## Getting Unstuck
+
+- For code questions: read the nearby files, follow existing patterns
+- For architecture: see `AGENTS.md` architecture section
+- For patterns: check `biome.json` for formatting rules

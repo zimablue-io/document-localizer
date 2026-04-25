@@ -1,0 +1,88 @@
+# Desktop App - Agent Guide
+
+## Overview
+
+Electron 33 desktop application for document localization. React frontend with IPC communication to main process.
+
+## Architecture
+
+```
+apps/desktop/src/
+├── App.tsx              # Main orchestrator (500 lines, delegating to components/hooks)
+├── components/          # UI components
+├── lib/                 # Business logic
+│   ├── locales.ts      # ALL_LOCALES (SSOT - don't duplicate!)
+│   ├── prompts.ts     # Translation prompts
+│   ├── processing.ts  # Document processing
+│   ├── files.ts       # File utilities
+│   ├── settings.ts    # Settings persistence
+│   ├── config.ts      # Defaults
+│   └── types.ts       # TypeScript interfaces
+├── hooks/
+│   └── useDocuments.ts # Document state management
+└── main.tsx           # React entry
+
+apps/desktop/electron/
+├── main.ts            # Main process, IPC handlers
+└── preload.ts         # Context bridge (window.electron.*)
+```
+
+## Three-Tab System
+
+1. **Uploaded** - Source files, never change
+2. **Tasks** - Active processing, awaiting review
+3. **Processed** - Approved/rejected, ready to export
+
+## IPC Handlers (main.ts)
+
+| Handler | Purpose |
+|---------|---------|
+| `dialog:openFile` | Native file picker |
+| `dialog:saveFile` | Native save dialog |
+| `fs:readFile` | Read file contents |
+| `fs:writeTextFile` | Write text to file |
+| `settings:load` | Load settings JSON |
+| `settings:save` | Save settings JSON |
+| `history:get/add` | History persistence |
+| `ai:generate` | AI API calls via net.fetch |
+
+## Settings Storage
+
+Located in `~/Library/Application Support/document-localizer/`:
+- `settings.json` - App configuration
+- `history.json` - Processing history
+- `uploaded.json` - Source document library
+- `tasks.json` - Active processing tasks
+- `processed.json` - Completed outputs
+
+## Key Constraints
+
+1. **All file ops through IPC** - Renderer has no direct fs access
+2. **Dev detection**: Use `app.isPackaged` (not `development` constant)
+3. **PDF parsing in renderer** - via pdfjs-dist
+4. **AI calls use net.fetch** - Chromium's built-in networking
+5. **Settings in JSON** - No conf library
+
+## Important Patterns
+
+### Locale List
+Single source of truth: `lib/locales.ts` exports `ALL_LOCALES`.
+Do NOT duplicate locale definitions elsewhere.
+
+### Processing Flow
+1. Upload file → `uploaded.json`
+2. Click Process → creates new Task
+3. Parse text (PDF via pdfjs, MD via IPC)
+4. Chunk text
+5. Send to AI via `ai:generate`
+6. Show in DiffView for review
+7. User approves/rejects → `processed.json`
+
+## Dev Commands
+
+```bash
+cd apps/desktop && pnpm dev          # Full dev with Electron
+cd apps/desktop && pnpm dev:web     # Web preview only
+pnpm build:desktop                   # Production build
+pnpm electron:build                  # electron-builder (creates .dmg)
+```
