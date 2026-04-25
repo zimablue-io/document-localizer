@@ -10,8 +10,10 @@
 	],
 	"scripts": {
 		"dev:desktop": "pnpm --filter @doclocalizer/desktop tauri dev",
+		"dev:landing": "pnpm --filter @doclocalizer/landing dev",
 		"build:core": "pnpm --filter @doclocalizer/core build",
 		"build:desktop": "pnpm --filter @doclocalizer/desktop build",
+		"build:landing": "pnpm --filter @doclocalizer/landing build",
 		"build": "pnpm run build:core && pnpm run build:desktop",
 		"lint": "biome check ."
 	},
