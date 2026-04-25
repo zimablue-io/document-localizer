@@ -12,6 +12,10 @@
   "build": {
     "appId": "io.doclocalizer.app",
     "productName": "Document Localizer",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
     "mac": {
       "target": ["dmg"],
       "category": "public.app-category.developer-tools"

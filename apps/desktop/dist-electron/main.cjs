@@ -6,9 +6,64 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const electron_1 = require("electron");
+const electron_updater_1 = require("electron-updater");
 // For dev logging
 const DEBUG = true;
 const log = (...args) => DEBUG && console.log('[electron]', ...args);
+// Auto-updater setup
+function setupAutoUpdater() {
+    // Disable auto-download - we'll prompt user first
+    electron_updater_1.autoUpdater.autoDownload = false;
+    electron_updater_1.autoUpdater.on('checking-for-update', () => {
+        log('Checking for updates...');
+    });
+    electron_updater_1.autoUpdater.on('update-available', (info) => {
+        log('Update available:', info.version);
+        // Prompt user to download
+        if (mainWindow) {
+            electron_1.dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Update Available',
+                message: `A new version (${info.version}) is available. Would you like to download it now?`,
+                buttons: ['Download', 'Later'],
+            }).then((result) => {
+                if (result.response === 0) {
+                    electron_updater_1.autoUpdater.downloadUpdate();
+                }
+            });
+        }
+    });
+    electron_updater_1.autoUpdater.on('update-not-available', () => {
+        log('No updates available');
+    });
+    electron_updater_1.autoUpdater.on('download-progress', (progress) => {
+        log(`Download progress: ${progress.percent.toFixed(1)}%`);
+    });
+    electron_updater_1.autoUpdater.on('update-downloaded', () => {
+        log('Update downloaded');
+        if (mainWindow) {
+            electron_1.dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Update Ready',
+                message: 'Update downloaded. The application will restart to install the update.',
+                buttons: ['Restart Now', 'Later'],
+            }).then((result) => {
+                if (result.response === 0) {
+                    electron_updater_1.autoUpdater.quitAndInstall();
+                }
+            });
+        }
+    });
+    electron_updater_1.autoUpdater.on('error', (err) => {
+        log('Auto-updater error:', err.message);
+    });
+}
+// Check for updates (skip in dev mode)
+function checkForUpdates() {
+    if (process.env.NODE_ENV === 'production') {
+        electron_updater_1.autoUpdater.checkForUpdates();
+    }
+}
 let mainWindow = null;
 function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
@@ -41,6 +96,8 @@ function createWindow() {
 }
 electron_1.app.whenReady().then(() => {
     createWindow();
+    setupAutoUpdater();
+    checkForUpdates();
     electron_1.app.on('activate', () => {
         if (electron_1.BrowserWindow.getAllWindows().length === 0) {
             createWindow();
