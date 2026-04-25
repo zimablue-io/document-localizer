@@ -1,20 +1,59 @@
+/**
+ * All available locales for document localization.
+ * SSOT (Single Source of Truth): IANA Language Subtag Registry
+ * https://www.iana.org/assignments/language-subtag-registry
+ */
 export interface Locale {
 	code: string
 	name: string
 }
 
 export const ALL_LOCALES: Locale[] = [
-	// English
-	{ code: 'en-US', name: 'American English' },
-	{ code: 'en-GB', name: 'British English' },
-	{ code: 'en-AU', name: 'Australian English' },
-	{ code: 'en-CA', name: 'Canadian English' },
-	{ code: 'en-NZ', name: 'New Zealand English' },
-	{ code: 'en-IE', name: 'Irish English' },
-	{ code: 'en-ZA', name: 'South African English' },
-	{ code: 'en-IN', name: 'Indian English' },
-	{ code: 'en-SG', name: 'Singapore English' },
-	// Spanish
+	// === AFRICAN LANGUAGES ===
+	{ code: 'af-ZA', name: 'Afrikaans (South Africa)' },
+	{ code: 'am-ET', name: 'Amharic (Ethiopia)' },
+	{ code: 'ha-NG', name: 'Hausa (Nigeria)' },
+	{ code: 'ig-NG', name: 'Igbo (Nigeria)' },
+	{ code: 'km-KH', name: 'Khmer (Cambodia)' },
+	{ code: 'lo-LA', name: 'Lao (Laos)' },
+	{ code: 'mg-MG', name: 'Malagasy (Madagascar)' },
+	{ code: 'mi-NZ', name: 'Maori (New Zealand)' },
+	{ code: 'ms-MY', name: 'Malay (Malaysia)' },
+	{ code: 'ms-SG', name: 'Malay (Singapore)' },
+	{ code: 'ms-BN', name: 'Malay (Brunei)' },
+	{ code: 'ne-NP', name: 'Nepali (Nepal)' },
+	{ code: 'om-ET', name: 'Oromo (Ethiopia)' },
+	{ code: 'si-LK', name: 'Sinhala (Sri Lanka)' },
+	{ code: 'so-SO', name: 'Somali (Somalia)' },
+	{ code: 'sw-TZ', name: 'Swahili (Tanzania)' },
+	{ code: 'sw-KE', name: 'Swahili (Kenya)' },
+	{ code: 'sw-UG', name: 'Swahili (Uganda)' },
+	{ code: 'ta-IN', name: 'Tamil (India)' },
+	{ code: 'ta-LK', name: 'Tamil (Sri Lanka)' },
+	{ code: 'ta-MY', name: 'Tamil (Malaysia)' },
+	{ code: 'ta-SG', name: 'Tamil (Singapore)' },
+	{ code: 'te-IN', name: 'Telugu (India)' },
+	{ code: 'ti-ET', name: 'Tigrinya (Ethiopia)' },
+	{ code: 'yo-NG', name: 'Yoruba (Nigeria)' },
+	{ code: 'zu-ZA', name: 'Zulu (South Africa)' },
+
+	// === ENGLISH VARIANTS ===
+	{ code: 'en-US', name: 'English (US)' },
+	{ code: 'en-GB', name: 'English (UK)' },
+	{ code: 'en-AU', name: 'English (Australia)' },
+	{ code: 'en-CA', name: 'English (Canada)' },
+	{ code: 'en-NZ', name: 'English (New Zealand)' },
+	{ code: 'en-IE', name: 'English (Ireland)' },
+	{ code: 'en-ZA', name: 'English (South Africa)' },
+	{ code: 'en-IN', name: 'English (India)' },
+	{ code: 'en-SG', name: 'English (Singapore)' },
+	{ code: 'en-HK', name: 'English (Hong Kong)' },
+	{ code: 'en-PH', name: 'English (Philippines)' },
+	{ code: 'en-NG', name: 'English (Nigeria)' },
+	{ code: 'en-GH', name: 'English (Ghana)' },
+	{ code: 'en-KE', name: 'English (Kenya)' },
+
+	// === SPANISH VARIANTS ===
 	{ code: 'es-ES', name: 'Spanish (Spain)' },
 	{ code: 'es-MX', name: 'Spanish (Mexico)' },
 	{ code: 'es-AR', name: 'Spanish (Argentina)' },
@@ -35,54 +74,105 @@ export const ALL_LOCALES: Locale[] = [
 	{ code: 'es-PY', name: 'Spanish (Paraguay)' },
 	{ code: 'es-UY', name: 'Spanish (Uruguay)' },
 	{ code: 'es-PR', name: 'Spanish (Puerto Rico)' },
-	// Portuguese
+	{ code: 'es-US', name: 'Spanish (US)' },
+
+	// === PORTUGUESE VARIANTS ===
 	{ code: 'pt-BR', name: 'Portuguese (Brazil)' },
 	{ code: 'pt-PT', name: 'Portuguese (Portugal)' },
-	// French
+	{ code: 'pt-AO', name: 'Portuguese (Angola)' },
+	{ code: 'pt-MZ', name: 'Portuguese (Mozambique)' },
+
+	// === FRENCH VARIANTS ===
 	{ code: 'fr-FR', name: 'French (France)' },
 	{ code: 'fr-CA', name: 'French (Canada)' },
 	{ code: 'fr-BE', name: 'French (Belgium)' },
 	{ code: 'fr-CH', name: 'French (Switzerland)' },
 	{ code: 'fr-LU', name: 'French (Luxembourg)' },
 	{ code: 'fr-MC', name: 'French (Monaco)' },
-	// German
+	{ code: 'fr-AF', name: 'French (West Africa)' },
+	{ code: 'fr-CM', name: 'French (Cameroon)' },
+	{ code: 'fr-CG', name: 'French (Congo)' },
+	{ code: 'fr-CD', name: 'French (DR Congo)' },
+	{ code: 'fr-SN', name: 'French (Senegal)' },
+	{ code: 'fr-ML', name: 'French (Mali)' },
+	{ code: 'fr-TG', name: 'French (Togo)' },
+	{ code: 'fr-BJ', name: 'French (Benin)' },
+	{ code: 'fr-NE', name: 'French (Niger)' },
+	{ code: 'fr-BF', name: 'French (Burkina Faso)' },
+	{ code: 'fr-CI', name: 'French (Ivory Coast)' },
+
+	// === GERMAN VARIANTS ===
 	{ code: 'de-DE', name: 'German (Germany)' },
 	{ code: 'de-AT', name: 'German (Austria)' },
 	{ code: 'de-CH', name: 'German (Switzerland)' },
 	{ code: 'de-LU', name: 'German (Luxembourg)' },
 	{ code: 'de-LI', name: 'German (Liechtenstein)' },
-	// Italian
+	{ code: 'de-BE', name: 'German (Belgium)' },
+
+	// === ITALIAN VARIANTS ===
 	{ code: 'it-IT', name: 'Italian (Italy)' },
 	{ code: 'it-CH', name: 'Italian (Switzerland)' },
-	// Dutch
+
+	// === DUTCH VARIANTS ===
 	{ code: 'nl-NL', name: 'Dutch (Netherlands)' },
 	{ code: 'nl-BE', name: 'Dutch (Belgium)' },
 	{ code: 'nl-SR', name: 'Dutch (Suriname)' },
-	// Russian
+
+	// === SLAVIC LANGUAGES ===
 	{ code: 'ru-RU', name: 'Russian (Russia)' },
 	{ code: 'ru-BY', name: 'Russian (Belarus)' },
 	{ code: 'ru-KZ', name: 'Russian (Kazakhstan)' },
-	// Ukrainian
+	{ code: 'ru-UA', name: 'Russian (Ukraine)' },
 	{ code: 'uk-UA', name: 'Ukrainian (Ukraine)' },
-	// Polish
 	{ code: 'pl-PL', name: 'Polish (Poland)' },
-	// Czech
 	{ code: 'cs-CZ', name: 'Czech (Czech Republic)' },
-	// Slovak
 	{ code: 'sk-SK', name: 'Slovak (Slovakia)' },
-	// Hungarian
 	{ code: 'hu-HU', name: 'Hungarian (Hungary)' },
-	// Romanian
 	{ code: 'ro-RO', name: 'Romanian (Romania)' },
 	{ code: 'ro-MD', name: 'Romanian (Moldova)' },
-	// Bulgarian
 	{ code: 'bg-BG', name: 'Bulgarian (Bulgaria)' },
-	// Greek
+	{ code: 'mk-MK', name: 'Macedonian (North Macedonia)' },
+	{ code: 'sq-AL', name: 'Albanian (Albania)' },
+	{ code: 'hr-HR', name: 'Croatian (Croatia)' },
+	{ code: 'sr-RS', name: 'Serbian (Serbia)' },
+	{ code: 'sr-BA', name: 'Serbian (Bosnia)' },
+	{ code: 'sr-ME', name: 'Serbian (Montenegro)' },
+	{ code: 'bs-BA', name: 'Bosnian (Bosnia)' },
+	{ code: 'sl-SI', name: 'Slovenian (Slovenia)' },
+
+	// === BALTIC LANGUAGES ===
+	{ code: 'lt-LT', name: 'Lithuanian (Lithuania)' },
+	{ code: 'lv-LV', name: 'Latvian (Latvia)' },
+	{ code: 'et-EE', name: 'Estonian (Estonia)' },
+
+	// === NORDIC LANGUAGES ===
+	{ code: 'sv-SE', name: 'Swedish (Sweden)' },
+	{ code: 'sv-FI', name: 'Swedish (Finland)' },
+	{ code: 'nb-NO', name: 'Norwegian Bokmal (Norway)' },
+	{ code: 'nn-NO', name: 'Norwegian Nynorsk (Norway)' },
+	{ code: 'da-DK', name: 'Danish (Denmark)' },
+	{ code: 'fi-FI', name: 'Finnish (Finland)' },
+	{ code: 'is-IS', name: 'Icelandic (Iceland)' },
+
+	// === GREEK & TURKISH ===
 	{ code: 'el-GR', name: 'Greek (Greece)' },
-	// Turkish
 	{ code: 'tr-TR', name: 'Turkish (Turkey)' },
 	{ code: 'tr-CY', name: 'Turkish (Cyprus)' },
-	// Arabic
+
+	// === CAUCASIAN LANGUAGES ===
+	{ code: 'ka-GE', name: 'Georgian (Georgia)' },
+	{ code: 'hy-AM', name: 'Armenian (Armenia)' },
+	{ code: 'az-AZ', name: 'Azerbaijani (Azerbaijan)' },
+
+	// === CENTRAL ASIAN LANGUAGES ===
+	{ code: 'kk-KZ', name: 'Kazakh (Kazakhstan)' },
+	{ code: 'uz-UZ', name: 'Uzbek (Uzbekistan)' },
+	{ code: 'tg-TJ', name: 'Tajik (Tajikistan)' },
+	{ code: 'ky-KG', name: 'Kyrgyz (Kyrgyzstan)' },
+	{ code: 'tk-TM', name: 'Turkmen (Turkmenistan)' },
+	{ code: 'mn-MN', name: 'Mongolian (Mongolia)' },
+
+	// === MIDDLE EASTERN LANGUAGES ===
 	{ code: 'ar-SA', name: 'Arabic (Saudi Arabia)' },
 	{ code: 'ar-AE', name: 'Arabic (UAE)' },
 	{ code: 'ar-EG', name: 'Arabic (Egypt)' },
@@ -97,84 +187,59 @@ export const ALL_LOCALES: Locale[] = [
 	{ code: 'ar-BH', name: 'Arabic (Bahrain)' },
 	{ code: 'ar-SY', name: 'Arabic (Syria)' },
 	{ code: 'ar-LY', name: 'Arabic (Libya)' },
-	// Hebrew
+	{ code: 'ar-PS', name: 'Arabic (Palestine)' },
+	{ code: 'ar-YE', name: 'Arabic (Yemen)' },
+	{ code: 'ar-SD', name: 'Arabic (Sudan)' },
+	{ code: 'ar-SO', name: 'Arabic (Somalia)' },
+	{ code: 'ar-DJ', name: 'Arabic (Djibouti)' },
+	{ code: 'ar-KM', name: 'Arabic (Comoros)' },
 	{ code: 'he-IL', name: 'Hebrew (Israel)' },
-	// Persian
+
+	// === IRANIAN LANGUAGES ===
 	{ code: 'fa-IR', name: 'Persian (Iran)' },
 	{ code: 'fa-AF', name: 'Persian (Afghanistan)' },
-	// Hindi
+	{ code: 'fa-TJ', name: 'Persian (Tajikistan)' },
+	{ code: 'ps-AF', name: 'Pashto (Afghanistan)' },
+
+	// === SOUTH ASIAN LANGUAGES ===
 	{ code: 'hi-IN', name: 'Hindi (India)' },
-	// Urdu
 	{ code: 'ur-PK', name: 'Urdu (Pakistan)' },
 	{ code: 'ur-IN', name: 'Urdu (India)' },
-	// Bengali
 	{ code: 'bn-BD', name: 'Bengali (Bangladesh)' },
 	{ code: 'bn-IN', name: 'Bengali (India)' },
-	// Chinese
+	{ code: 'pa-IN', name: 'Punjabi (India)' },
+	{ code: 'pa-PK', name: 'Punjabi (Pakistan)' },
+	{ code: 'gu-IN', name: 'Gujarati (India)' },
+	{ code: 'mr-IN', name: 'Marathi (India)' },
+	{ code: 'kn-IN', name: 'Kannada (India)' },
+	{ code: 'ml-IN', name: 'Malayalam (India)' },
+
+	// === SOUTHEAST ASIAN LANGUAGES ===
+	{ code: 'id-ID', name: 'Indonesian (Indonesia)' },
+	{ code: 'fil-PH', name: 'Filipino (Philippines)' },
+	{ code: 'vi-VN', name: 'Vietnamese (Vietnam)' },
+	{ code: 'th-TH', name: 'Thai (Thailand)' },
+	{ code: 'my-MM', name: 'Burmese (Myanmar)' },
+
+	// === EAST ASIAN LANGUAGES ===
 	{ code: 'zh-CN', name: 'Chinese (Simplified, China)' },
 	{ code: 'zh-TW', name: 'Chinese (Traditional, Taiwan)' },
-	{ code: 'zh-HK', name: 'Chinese (Hong Kong)' },
+	{ code: 'zh-HK', name: 'Chinese (Cantonese, Hong Kong)' },
 	{ code: 'zh-SG', name: 'Chinese (Singapore)' },
 	{ code: 'zh-MO', name: 'Chinese (Macau)' },
-	// Japanese
 	{ code: 'ja-JP', name: 'Japanese (Japan)' },
-	// Korean
 	{ code: 'ko-KR', name: 'Korean (South Korea)' },
 	{ code: 'ko-KP', name: 'Korean (North Korea)' },
-	// Vietnamese
-	{ code: 'vi-VN', name: 'Vietnamese (Vietnam)' },
-	// Thai
-	{ code: 'th-TH', name: 'Thai (Thailand)' },
-	// Indonesian
-	{ code: 'id-ID', name: 'Indonesian (Indonesia)' },
-	// Malay
-	{ code: 'ms-MY', name: 'Malay (Malaysia)' },
-	{ code: 'ms-SG', name: 'Malay (Singapore)' },
-	{ code: 'ms-BN', name: 'Malay (Brunei)' },
-	// Tagalog
-	{ code: 'fil-PH', name: 'Filipino (Philippines)' },
-	// Swedish
-	{ code: 'sv-SE', name: 'Swedish (Sweden)' },
-	{ code: 'sv-FI', name: 'Swedish (Finland)' },
-	// Norwegian
-	{ code: 'nb-NO', name: 'Norwegian Bokmal (Norway)' },
-	{ code: 'nn-NO', name: 'Norwegian Nynorsk (Norway)' },
-	// Danish
-	{ code: 'da-DK', name: 'Danish (Denmark)' },
-	// Finnish
-	{ code: 'fi-FI', name: 'Finnish (Finland)' },
-	// Icelandic
-	{ code: 'is-IS', name: 'Icelandic (Iceland)' },
-	// Estonian
-	{ code: 'et-EE', name: 'Estonian (Estonia)' },
-	// Latvian
-	{ code: 'lv-LV', name: 'Latvian (Latvia)' },
-	// Lithuanian
-	{ code: 'lt-LT', name: 'Lithuanian (Lithuania)' },
-	// Catalan
+
+	// === ROMANCE LANGUAGES (OTHER) ===
 	{ code: 'ca-ES', name: 'Catalan (Spain)' },
-	// Basque
 	{ code: 'eu-ES', name: 'Basque (Spain)' },
-	// Galician
 	{ code: 'gl-ES', name: 'Galician (Spain)' },
-	// Croatian
-	{ code: 'hr-HR', name: 'Croatian (Croatia)' },
-	// Serbian
-	{ code: 'sr-RS', name: 'Serbian (Serbia)' },
-	{ code: 'sr-BA', name: 'Serbian (Bosnia)' },
-	{ code: 'sr-ME', name: 'Serbian (Montenegro)' },
-	// Bosnian
-	{ code: 'bs-BA', name: 'Bosnian (Bosnia)' },
-	// Slovenian
-	{ code: 'sl-SI', name: 'Slovenian (Slovenia)' },
-	// Macedonian
-	{ code: 'mk-MK', name: 'Macedonian (North Macedonia)' },
-	// Albanian
-	{ code: 'sq-AL', name: 'Albanian (Albania)' },
-	// Welsh
+	{ code: 'oc-FR', name: 'Occitan (France)' },
+	{ code: 'co-FR', name: 'Corsican (France)' },
 	{ code: 'cy-GB', name: 'Welsh (UK)' },
-	// Irish
 	{ code: 'ga-IE', name: 'Irish (Ireland)' },
-	// Scottish Gaelic
 	{ code: 'gd-GB', name: 'Scottish Gaelic (UK)' },
+	{ code: 'mt-MT', name: 'Maltese (Malta)' },
+	{ code: 'lb-LU', name: 'Luxembourgish (Luxembourg)' },
 ]
