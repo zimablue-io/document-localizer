@@ -2,6 +2,11 @@
   "name": "@doclocalizer/desktop",
   "version": "0.1.0",
   "main": "dist-electron/main.cjs",
+  "publish": {
+    "provider": "github",
+    "owner": "lefamoffat",
+    "repo": "document-localizer"
+  },
   "scripts": {
     "dev": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js && NODE_ENV=production electron .",
     "dev:web": "vite",
@@ -18,6 +23,7 @@
     "diff": "^9.0.0",
     "electron": "^33.4.0",
     "electron-builder": "^26.0.12",
+    "electron-updater": "^6.3.9",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.8.0",
     "react": "^18.3.1",

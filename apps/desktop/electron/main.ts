@@ -1,10 +1,73 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, net } from 'electron'
+import { autoUpdater } from 'electron-updater'
 
 // For dev logging
 const DEBUG = true
 const log = (...args: unknown[]) => DEBUG && console.log('[electron]', ...args)
+
+// Auto-updater setup
+function setupAutoUpdater() {
+	// Disable auto-download - we'll prompt user first
+	autoUpdater.autoDownload = false
+
+	autoUpdater.on('checking-for-update', () => {
+		log('Checking for updates...')
+	})
+
+	autoUpdater.on('update-available', (info) => {
+		log('Update available:', info.version)
+		// Prompt user to download
+		if (mainWindow) {
+			dialog.showMessageBox(mainWindow, {
+				type: 'info',
+				title: 'Update Available',
+				message: `A new version (${info.version}) is available. Would you like to download it now?`,
+				buttons: ['Download', 'Later'],
+			}).then((result) => {
+				if (result.response === 0) {
+					autoUpdater.downloadUpdate()
+				}
+			})
+		}
+	})
+
+	autoUpdater.on('update-not-available', () => {
+		log('No updates available')
+	})
+
+	autoUpdater.on('download-progress', (progress) => {
+		log(`Download progress: ${progress.percent.toFixed(1)}%`)
+	})
+
+	autoUpdater.on('update-downloaded', () => {
+		log('Update downloaded')
+		if (mainWindow) {
+			dialog.showMessageBox(mainWindow, {
+				type: 'info',
+				title: 'Update Ready',
+				message: 'Update downloaded. The application will restart to install the update.',
+				buttons: ['Restart Now', 'Later'],
+			}).then((result) => {
+				if (result.response === 0) {
+					autoUpdater.quitAndInstall()
+				}
+			})
+		}
+	})
+
+	autoUpdater.on('error', (err) => {
+		log('Auto-updater error:', err.message)
+	})
+}
+
+// Check for updates (skip in dev mode)
+function checkForUpdates() {
+	if (process.env.NODE_ENV === 'production') {
+		autoUpdater.checkForUpdates()
+	}
+}
 
 let mainWindow: BrowserWindow | null = null
 
@@ -42,6 +105,8 @@ function createWindow() {
 
 app.whenReady().then(() => {
 	createWindow()
+	setupAutoUpdater()
+	checkForUpdates()
 
 	app.on('activate', () => {
 		if (BrowserWindow.getAllWindows().length === 0) {
