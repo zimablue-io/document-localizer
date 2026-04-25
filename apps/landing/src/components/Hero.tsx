@@ -1,5 +1,6 @@
-import { Download, FileText } from 'lucide-react'
+import { Download, FileText, Info } from 'lucide-react'
 import { GitHubIcon } from './Icons'
+import { usePlatform } from '../hooks/usePlatform'
 
 const originalText = 'The color of the car is parked in the garage. Mom made her favorite soccer jersey.'
 const localizedText = 'The colour of the car is parked in the garage. Mum made her favourite football jersey.'
@@ -42,41 +43,54 @@ function LocalizedText() {
 }
 
 export default function Hero() {
+	const platform = usePlatform()
+	const isMac = platform === 'macos'
+
 	return (
-		<section className="h-[66vh] min-h-[500px] flex items-center px-12 relative overflow-hidden">
+		<section className="min-h-[calc(100vh-80px)] flex items-center px-6 md:px-12 py-16 relative overflow-hidden">
 			{/* Background gradient */}
 			<div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5" />
 			<div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
 			<div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow-delayed" />
 
 			{/* Content */}
-			<div className="max-w-6xl mx-auto w-full grid lg:grid-cols-2 gap-12 items-center relative z-10">
+			<div className="max-w-6xl mx-auto w-full grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10">
 				{/* Left: Text content */}
-				<div className="space-y-6">
-					<h1 className="text-5xl md:text-6xl font-bold leading-tight">
+				<div className="space-y-4 md:space-y-6 text-center md:text-left">
+					<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
 						<span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
 							Document Localizer
 						</span>
 					</h1>
-					<p className="text-xl text-muted-foreground">
+					<p className="text-lg md:text-xl text-muted-foreground">
 						Transform documents between American and British English
 					</p>
-					<p className="text-muted-foreground max-w-md">
+					<p className="text-muted-foreground max-w-md mx-auto md:mx-0">
 						Localize your documents with AI. Entirely on your machine - your documents never leave your
 						computer.
 					</p>
 
-					<div className="flex gap-4 pt-4">
-						<a
-							href="https://github.com/zimablue-io/document-localizer/releases"
-							className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all hover:scale-105 shadow-lg shadow-primary/25 animate-glow"
-						>
-							<Download className="w-5 h-5" />
-							Download for macOS
-						</a>
+					<div className="flex flex-col sm:flex-row gap-3 pt-4">
+						{isMac ? (
+							<a
+								href="https://github.com/zimablue-io/document-localizer/releases"
+								className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all hover:scale-105 shadow-lg shadow-primary/25 animate-glow"
+							>
+								<Download className="w-5 h-5" />
+								Download for macOS
+							</a>
+						) : (
+							<button
+								disabled
+								className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-muted text-muted-foreground rounded-lg font-medium cursor-not-allowed opacity-60"
+							>
+								<Info className="w-5 h-5" />
+								Currently available for macOS only
+							</button>
+						)}
 						<a
 							href="https://github.com/zimablue-io/document-localizer"
-							className="inline-flex items-center gap-2 px-6 py-3 border border-border rounded-lg font-medium hover:bg-card transition-all hover:scale-105"
+							className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-border rounded-lg font-medium hover:bg-card transition-all hover:scale-105"
 						>
 							<GitHubIcon className="w-5 h-5" />
 							View on GitHub
@@ -87,29 +101,29 @@ export default function Hero() {
 				{/* Right: Animated Demo */}
 				<div className="relative">
 					{/* Floating document icons */}
-					<div className="absolute -top-8 -left-8 animate-float-delayed">
+					<div className="absolute -top-8 -left-8 animate-float-delayed hidden md:block">
 						<div className="w-16 h-20 bg-card rounded-lg border border-border shadow-lg flex items-center justify-center">
 							<FileText className="w-8 h-8 text-primary" />
 						</div>
 					</div>
-					<div className="absolute -top-4 right-4 animate-float">
+					<div className="absolute -top-4 right-4 animate-float hidden md:block">
 						<div className="w-14 h-18 bg-card rounded-lg border border-border shadow-lg flex items-center justify-center">
 							<FileText className="w-7 h-7 text-purple-400" />
 						</div>
 					</div>
-					<div className="absolute bottom-0 -left-12 animate-float-delayed-2">
+					<div className="absolute bottom-0 -left-12 animate-float-delayed-2 hidden md:block">
 						<div className="w-12 h-16 bg-card rounded-lg border border-border shadow-lg flex items-center justify-center">
 							<FileText className="w-6 h-6 text-green-400" />
 						</div>
 					</div>
 
 					{/* Vertical diff boxes */}
-					<div className="bg-card/80 backdrop-blur rounded-2xl border border-border p-6 shadow-2xl">
+					<div className="bg-card/80 backdrop-blur rounded-2xl border border-border p-4 md:p-6 shadow-2xl">
 						<div className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
 							<span className="w-2 h-2 rounded-full bg-red-400" />
 							Original (American English)
 						</div>
-						<div className="bg-[#1a1a2e] rounded-lg p-4 mb-4">
+						<div className="bg-[#1a1a2e] rounded-lg p-3 md:p-4 mb-3 md:mb-4">
 							<OriginalText />
 						</div>
 
@@ -140,7 +154,7 @@ export default function Hero() {
 							<span className="w-2 h-2 rounded-full bg-green-400" />
 							Localized (British English)
 						</div>
-						<div className="bg-[#1a1a2e] rounded-lg p-4">
+						<div className="bg-[#1a1a2e] rounded-lg p-3 md:p-4">
 							<LocalizedText />
 						</div>
 					</div>

@@ -33,10 +33,9 @@ const steps: Step[] = [
 
 export default function StepViewer() {
 	const [activeStep, setActiveStep] = useState(0)
-	const sectionRef = useRef<HTMLDivElement>(null)
 	const stepRefs = useRef<(HTMLDivElement | null)[]>([])
 
-	// Scroll-driven activation via IntersectionObserver
+	// Scroll-driven activation via IntersectionObserver (desktop only)
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			(entries) => {
@@ -72,13 +71,33 @@ export default function StepViewer() {
 	}
 
 	return (
-		<section className="py-20 px-6 border-t border-border">
+		<section className="py-12 md:py-20 px-6 border-t border-border">
 			<div className="max-w-6xl mx-auto">
-				<h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+				<h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">How It Works</h2>
 
-				<div className="flex gap-12" ref={sectionRef}>
-					{/* Left Sidebar - Vertical Tabs */}
-					<div className="w-56 flex-shrink-0">
+				<div className="flex flex-col md:flex-row gap-6 md:gap-12">
+					{/* Mobile: Horizontal Tabs */}
+					<div className="md:hidden w-full">
+						<div className="flex border-b border-border mb-8 overflow-x-auto">
+							{steps.map((step, index) => (
+								<button
+									key={step.id}
+									onClick={() => setActiveStep(index)}
+									className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+										activeStep === index
+											? 'border-primary text-primary'
+											: 'border-transparent text-muted-foreground hover:text-foreground'
+									}`}
+								>
+									<span className="font-bold mr-1">{step.id}.</span>
+									{step.title}
+								</button>
+							))}
+						</div>
+					</div>
+
+					{/* Desktop: Left Sidebar - Vertical Tabs */}
+					<div className="hidden md:block w-56 flex-shrink-0">
 						<nav className="space-y-1">
 							{steps.map((step, index) => (
 								<button
@@ -90,15 +109,17 @@ export default function StepViewer() {
 											: 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'
 									}`}
 								>
-									<span className="text-sm font-medium">Step {step.id}</span>
-									<span className="block text-base font-semibold mt-0.5">{step.title}</span>
+									<span className="text-sm font-medium">
+										<span className="font-bold mr-1">{step.id}.</span>
+										{step.title}
+									</span>
 								</button>
 							))}
 						</nav>
 					</div>
 
 					{/* Right Content - Dynamic Area */}
-					<div className="flex-1 min-h-[500px]">
+					<div className="flex-1 min-h-[400px] md:min-h-[500px]">
 						{steps.map((step, index) => (
 							<div
 								key={step.id}
@@ -117,7 +138,7 @@ export default function StepViewer() {
 									/>
 								</div>
 								<div className="mt-6">
-									<h3 className="text-2xl font-semibold mb-3">{step.title}</h3>
+									<h3 className="text-xl md:text-2xl font-semibold mb-3">{step.title}</h3>
 									<p className="text-muted-foreground leading-relaxed">{step.description}</p>
 								</div>
 							</div>

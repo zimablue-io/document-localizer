@@ -11,8 +11,64 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: macos-latest
+  bump-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Bump version
+        id: version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          echo "New version: $NEW_VERSION"
+          
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('apps/desktop/package.json', 'utf8'));
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('apps/desktop/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add apps/desktop/package.json
+          git commit -m \"chore: bump version to $NEW_VERSION\"
+          git push origin main
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+  build:
+    needs: bump-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: macos-latest
+            artifact: dmg
+          - os: windows-latest
+            artifact: exe
+          - os: ubuntu-latest
+            artifact: AppImage
 
     steps:
       - name: Checkout
@@ -29,48 +85,26 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
-      - name: Bump version and publish
-        id: version
-        run: |
-          # Read current version from package.json
-          CURRENT_VERSION=$(node -p "require('./apps/desktop/package.json').version")
-          echo "Current version: $CURRENT_VERSION"
-          
-          # Split version into components
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-          
-          # Increment patch version
-          NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-          echo "New version: $NEW_VERSION"
-          
-          # Update package.json
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('apps/desktop/package.json', 'utf8'));
-            pkg.version = '$NEW_VERSION';
-            fs.writeFileSync('apps/desktop/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          
-          # Commit version bump
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add apps/desktop/package.json
-          git commit -m "chore: bump version to $NEW_VERSION"
-          git push origin main
-          
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-
       - name: Build Desktop App
         run: pnpm --filter @doclocalizer/desktop electron:build
         env:
           NODE_ENV: production
 
+      - name: Find artifacts
+        id: artifacts
+        run: |
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            echo "path=apps/desktop/dist/*.dmg" >> $GITHUB_OUTPUT
+          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            echo "path=apps/desktop/dist/*.exe" >> $GITHUB_OUTPUT
+          else
+            echo "path=apps/desktop/dist/*.AppImage" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            apps/desktop/dist/*.dmg
+          files: ${{ steps.artifacts.outputs.path }}
           draft: false
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
+          tag_name: v${{ needs.bump-version.outputs.version }}
+          name: v${{ needs.bump-version.outputs.version }}

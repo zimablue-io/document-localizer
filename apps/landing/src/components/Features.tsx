@@ -31,14 +31,14 @@ const features = [
 
 export default function Features() {
 	return (
-		<section className="h-[34vh] min-h-[200px] flex items-center px-6 border-t border-border bg-gradient-to-b from-card/50 to-background">
+		<section className="py-12 md:py-16 px-6 border-t border-border bg-gradient-to-b from-card/50 to-background">
 			<div className="max-w-6xl mx-auto w-full">
 				<div className="text-center mb-8">
 					<h2 className="text-2xl font-bold mb-1">Everything you need</h2>
 					<p className="text-muted-foreground text-sm">Localize documents with confidence.</p>
 				</div>
 
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
 					{features.map((feature) => (
 						<div
 							key={feature.title}
