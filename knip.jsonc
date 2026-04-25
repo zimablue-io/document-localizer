@@ -1,0 +1,23 @@
+{
+  // Knip configuration for document-localizer
+  // https://knip.dev
+  
+  "$schema": "https://knip.dev/schema.json",
+  
+  // Electron main process is compiled separately - knip can't trace imports
+  "ignoreFiles": [
+    "apps/desktop/electron/**"
+  ],
+  
+  // Used in electron main process (ignored above)
+  "ignoreDependencies": [
+    "electron-updater"
+  ],
+  
+  // Exports and types have too many false positives in this codebase
+  // (re-exports, type re-declarations, etc.)
+  "exclude": [
+    "exports",
+    "types"
+  ]
+}

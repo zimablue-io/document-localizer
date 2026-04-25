@@ -33,3 +33,4 @@ workspace/.batch-status.json
 # Build outputs
 dist/
 apps/desktop/dist/
+apps/desktop/dist-electron/
