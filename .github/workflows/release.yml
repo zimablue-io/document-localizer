@@ -51,7 +51,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add apps/desktop/package.json
-          git commit -m \"chore: bump version to $NEW_VERSION\"
+          git commit -m "chore: bump version to ${NEW_VERSION}"
           git push origin main
           
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
