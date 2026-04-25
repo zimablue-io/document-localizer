@@ -88,10 +88,12 @@ cd apps/landing && pnpm dev
 cd packages/core && pnpm build
 ```
 
-## Contributing
+## Documentation
 
-See [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) for development setup and contribution guidelines.
-
-## License
-
-Copyright (c) 2024-2026 zimablue-io. Free for personal/non-commercial use. See [docs/LICENSE.md](./docs/LICENSE.md).
+| Topic | Location |
+|-------|----------|
+| Contributing | [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) |
+| License | [LICENSE.md](./LICENSE.md) |
+| Privacy Policy | [docs/PRIVACY.md](./docs/PRIVACY.md) |
+| Support | [docs/SUPPORT.md](./docs/SUPPORT.md) |
+| Security | [docs/SECURITY.md](./docs/SECURITY.md) |

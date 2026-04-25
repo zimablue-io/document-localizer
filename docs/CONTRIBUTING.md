@@ -78,6 +78,15 @@ Please include:
 - Actual behavior
 - Your OS and version
 
+## Documentation
+
+This project includes the following documentation:
+
+- [LICENSE.md](../LICENSE.md) - Usage terms
+- [PRIVACY.md](./PRIVACY.md) - Privacy policy
+- [SUPPORT.md](./SUPPORT.md) - Getting help
+- [SECURITY.md](./SECURITY.md) - Security policy
+
 ## Questions?
 
 Open an issue or start a discussion on GitHub.
