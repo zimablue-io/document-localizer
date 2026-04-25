@@ -15,7 +15,9 @@
 		"build:desktop": "pnpm --filter @doclocalizer/desktop build",
 		"build:landing": "pnpm --filter @doclocalizer/landing build",
 		"build": "pnpm run build:core && pnpm run build:desktop",
-		"lint": "biome check ."
+		"lint": "biome check .",
+		"lint:fix": "biome check . --write",
+		"test": "vitest run"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.12",

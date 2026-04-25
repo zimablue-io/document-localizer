@@ -34,8 +34,7 @@ const providers: Provider[] = [
 			},
 			{
 				title: 'Configure in app',
-				description:
-					'Enter API URL http://localhost:11434/v1 and model name (e.g., llama3.2:3b) in Settings.',
+				description: 'Enter API URL http://localhost:11434/v1 and model name (e.g., llama3.2:3b) in Settings.',
 			},
 		],
 	},
@@ -92,7 +91,8 @@ const providers: Provider[] = [
 			},
 			{
 				title: 'Configure in app',
-				description: 'Enter API URL http://localhost:8080/v1 and model name (from your GGUF filename) in Settings.',
+				description:
+					'Enter API URL http://localhost:8080/v1 and model name (from your GGUF filename) in Settings.',
 			},
 		],
 	},
@@ -139,8 +139,8 @@ export default function SetupGuide() {
 			<div className="max-w-4xl mx-auto">
 				<h2 className="text-3xl font-bold text-center mb-4">Setup Your AI Backend</h2>
 				<p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-					Document Localizer works with any OpenAI-compatible API. Choose your preferred backend below
-					and follow the steps to get started.
+					Document Localizer works with any OpenAI-compatible API. Choose your preferred backend below and
+					follow the steps to get started.
 				</p>
 
 				{/* Horizontal Tab List */}
@@ -207,8 +207,8 @@ export default function SetupGuide() {
 
 						<div className="mt-6 p-4 bg-secondary/50 rounded-lg">
 							<p className="text-sm">
-								<strong>Note:</strong> Any OpenAI-compatible API works. The app sends text to your
-								local server and receives translations back.
+								<strong>Note:</strong> Any OpenAI-compatible API works. The app sends text to your local
+								server and receives translations back.
 							</p>
 						</div>
 					</div>
@@ -221,12 +221,7 @@ export default function SetupGuide() {
 					</h4>
 					<div className="flex flex-wrap justify-center gap-6 text-sm">
 						<div className="flex items-center gap-2">
-							<svg
-								className="w-5 h-5 text-primary"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
+							<svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"
@@ -237,12 +232,7 @@ export default function SetupGuide() {
 							<span>macOS 12+</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<svg
-								className="w-5 h-5 text-primary"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
+							<svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"
@@ -253,12 +243,7 @@ export default function SetupGuide() {
 							<span>4GB+ RAM (8GB recommended)</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<svg
-								className="w-5 h-5 text-primary"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
+							<svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"

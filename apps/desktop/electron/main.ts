@@ -20,16 +20,18 @@ function setupAutoUpdater() {
 		log('Update available:', info.version)
 		// Prompt user to download
 		if (mainWindow) {
-			dialog.showMessageBox(mainWindow, {
-				type: 'info',
-				title: 'Update Available',
-				message: `A new version (${info.version}) is available. Would you like to download it now?`,
-				buttons: ['Download', 'Later'],
-			}).then((result) => {
-				if (result.response === 0) {
-					autoUpdater.downloadUpdate()
-				}
-			})
+			dialog
+				.showMessageBox(mainWindow, {
+					type: 'info',
+					title: 'Update Available',
+					message: `A new version (${info.version}) is available. Would you like to download it now?`,
+					buttons: ['Download', 'Later'],
+				})
+				.then((result) => {
+					if (result.response === 0) {
+						autoUpdater.downloadUpdate()
+					}
+				})
 		}
 	})
 
@@ -44,16 +46,18 @@ function setupAutoUpdater() {
 	autoUpdater.on('update-downloaded', () => {
 		log('Update downloaded')
 		if (mainWindow) {
-			dialog.showMessageBox(mainWindow, {
-				type: 'info',
-				title: 'Update Ready',
-				message: 'Update downloaded. The application will restart to install the update.',
-				buttons: ['Restart Now', 'Later'],
-			}).then((result) => {
-				if (result.response === 0) {
-					autoUpdater.quitAndInstall()
-				}
-			})
+			dialog
+				.showMessageBox(mainWindow, {
+					type: 'info',
+					title: 'Update Ready',
+					message: 'Update downloaded. The application will restart to install the update.',
+					buttons: ['Restart Now', 'Later'],
+				})
+				.then((result) => {
+					if (result.response === 0) {
+						autoUpdater.quitAndInstall()
+					}
+				})
 		}
 	})
 
@@ -96,7 +100,6 @@ function createWindow() {
 
 	if (isDev) {
 		mainWindow.loadURL('http://localhost:1420')
-		mainWindow.webContents.openDevTools()
 	} else {
 		mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
 	}

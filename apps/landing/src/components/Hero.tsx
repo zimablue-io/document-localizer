@@ -62,8 +62,8 @@ export default function Hero() {
 						Transform documents between American and British English
 					</p>
 					<p className="text-muted-foreground max-w-md">
-						Localize your documents with AI. Entirely on your machine - your
-						documents never leave your computer.
+						Localize your documents with AI. Entirely on your machine - your documents never leave your
+						computer.
 					</p>
 
 					<div className="flex gap-4 pt-4">
@@ -115,11 +115,23 @@ export default function Hero() {
 
 						<div className="flex justify-center my-3">
 							<div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center animate-bounce-slow gap-0">
-								<svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-									<path d="M12 5v14M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round"/>
+								<svg
+									className="w-5 h-5 text-primary"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+								>
+									<path d="M12 5v14M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
 								</svg>
-								<svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-									<path d="M12 19V5M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round"/>
+								<svg
+									className="w-5 h-5 text-primary"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+								>
+									<path d="M12 19V5M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
 								</svg>
 							</div>
 						</div>

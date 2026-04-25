@@ -21,12 +21,14 @@ function setupAutoUpdater() {
         log('Update available:', info.version);
         // Prompt user to download
         if (mainWindow) {
-            electron_1.dialog.showMessageBox(mainWindow, {
+            electron_1.dialog
+                .showMessageBox(mainWindow, {
                 type: 'info',
                 title: 'Update Available',
                 message: `A new version (${info.version}) is available. Would you like to download it now?`,
                 buttons: ['Download', 'Later'],
-            }).then((result) => {
+            })
+                .then((result) => {
                 if (result.response === 0) {
                     electron_updater_1.autoUpdater.downloadUpdate();
                 }
@@ -42,12 +44,14 @@ function setupAutoUpdater() {
     electron_updater_1.autoUpdater.on('update-downloaded', () => {
         log('Update downloaded');
         if (mainWindow) {
-            electron_1.dialog.showMessageBox(mainWindow, {
+            electron_1.dialog
+                .showMessageBox(mainWindow, {
                 type: 'info',
                 title: 'Update Ready',
                 message: 'Update downloaded. The application will restart to install the update.',
                 buttons: ['Restart Now', 'Later'],
-            }).then((result) => {
+            })
+                .then((result) => {
                 if (result.response === 0) {
                     electron_updater_1.autoUpdater.quitAndInstall();
                 }
@@ -88,7 +92,6 @@ function createWindow() {
     console.log('[electron] loading from:', isDev ? 'localhost:1420' : node_path_1.default.join(__dirname, '../dist/index.html'));
     if (isDev) {
         mainWindow.loadURL('http://localhost:1420');
-        mainWindow.webContents.openDevTools();
     }
     else {
         mainWindow.loadFile(node_path_1.default.join(__dirname, '../dist/index.html'));

@@ -2,56 +2,8 @@ import { Button, Input, Label, ScrollArea, Tabs, TabsContent, TabsList, TabsTrig
 import { Check, Edit2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { ALL_LOCALES } from '../lib/locales'
-
-interface ModelConfig {
-	id: string
-	name: string
-}
-
-interface Settings {
-	apiUrl: string
-	models: ModelConfig[]
-	activeModelId: string
-	chunkSize: string
-	overlapSize: string
-	targetLocale: string
-	sourceLocale: string
-	enabledLocaleCodes: string[]
-	customPrompt?: string
-}
-
-const DEFAULT_PROMPT = `STRICT LOCALIZATION RULES - FOLLOW EXACTLY:
-
-CRITICAL - THIS IS WORD REPLACEMENT ONLY:
-- You are NOT writing a story. You are NOT being creative. You are ONLY replacing words.
-- NEVER invent, add, remove, or modify any content beyond word-level changes
-- NEVER change sentence structure, punctuation, or paragraph structure
-- NEVER add dialogue, descriptions, or narrative that wasn't in the original
-- The text you output MUST contain EXACTLY the same words as the input, just with spelling/word replacements
-
-TARGET LOCALE CONVERSIONS ONLY:
-- color → colour (or vice versa depending on target)
-- honor → honour (or vice versa)
-- Words like "mom", "dad", "football", "soccer" → use the target locale equivalent
-- Only make changes that match the target locale's spelling/word conventions
-
-PRESERVE EVERYTHING EXACTLY:
-- Keep every single word from the original
-- Keep all punctuation exactly as written
-- Keep all paragraph breaks exactly as in the original
-- Keep all dialogue exactly as written - do NOT add speech tags like "he said" or "she whispered"
-- Keep all capitalization exactly as in the original
-- Keep all sentence structure exactly as in the original
-- If a word has no locale-specific alternative, leave it EXACTLY as is
-
-OUTPUT FORMAT:
-- Output EXACTLY one paragraph of text
-- NO markers, NO comments, NO explanations
-- NO leading/trailing whitespace
-
----BEGIN TEXT---
-{text}
----END TEXT---`
+import { DEFAULT_LOCALIZATION_PROMPT } from '../lib/prompts'
+import type { ModelConfig, Settings } from '../lib/types'
 
 interface SettingsModalProps {
 	settings: Settings
@@ -70,7 +22,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 	const [editModelName, setEditModelName] = useState('')
 
 	const handleResetPrompt = () => {
-		onChange({ ...settings, customPrompt: DEFAULT_PROMPT })
+		onChange({ ...settings, customPrompt: DEFAULT_LOCALIZATION_PROMPT })
 	}
 
 	const toggleLocale = (code: string) => {
@@ -149,7 +101,8 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 					<ScrollArea className="flex-1 min-h-0 mt-4">
 						<TabsContent value="locales" className="space-y-4 pr-4">
 							<p className="text-sm text-muted-foreground">
-								Select locales to enable. Enabled locales can be used as source or target for document processing.
+								Select locales to enable. Enabled locales can be used as source or target for document
+								processing.
 							</p>
 
 							{/* Search */}
@@ -173,15 +126,15 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 										>
 											<div
 												className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-													isEnabled
-														? 'bg-primary border-primary'
-														: 'border-muted-foreground'
+													isEnabled ? 'bg-primary border-primary' : 'border-muted-foreground'
 												}`}
 											>
 												{isEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
 											</div>
 											<div className="flex-1">
-												<span className={isEnabled ? 'text-foreground' : 'text-muted-foreground'}>
+												<span
+													className={isEnabled ? 'text-foreground' : 'text-muted-foreground'}
+												>
 													{locale.name}
 												</span>
 												<span className="text-xs text-muted-foreground ml-2">
@@ -192,9 +145,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 									)
 								})}
 								{filteredLocales.length === 0 && (
-									<p className="text-sm text-muted-foreground text-center py-4">
-										No locales found
-									</p>
+									<p className="text-sm text-muted-foreground text-center py-4">No locales found</p>
 								)}
 							</div>
 						</TabsContent>
@@ -319,7 +270,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 							</div>
 							<textarea
 								id="prompt"
-								value={settings.customPrompt || DEFAULT_PROMPT}
+								value={settings.customPrompt || DEFAULT_LOCALIZATION_PROMPT}
 								onChange={(e) => onChange({ ...settings, customPrompt: e.target.value })}
 								className="min-h-[16rem] w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 resize-none font-mono"
 								placeholder="Enter your custom prompt..."

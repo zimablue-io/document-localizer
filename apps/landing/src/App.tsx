@@ -1,9 +1,9 @@
-import Hero from './components/Hero'
 import Features from './components/Features'
-import StepViewer from './components/StepViewer'
-import SetupGuide from './components/SetupGuide'
 import Footer from './components/Footer'
+import Hero from './components/Hero'
 import Navigation from './components/Navigation'
+import SetupGuide from './components/SetupGuide'
+import StepViewer from './components/StepViewer'
 
 export default function App() {
 	return (

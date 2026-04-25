@@ -3,7 +3,7 @@ import { ChevronDown, History, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 // Custom hook for connection checking
-function useConnectionCheck(apiUrl: string | undefined, refreshKey?: number) {
+function useConnectionCheck(apiUrl: string | undefined, _refreshKey?: number) {
 	const [isOnline, setIsOnline] = useState(false)
 	const [isChecking, setIsChecking] = useState(false)
 
@@ -31,7 +31,7 @@ function useConnectionCheck(apiUrl: string | undefined, refreshKey?: number) {
 
 	useEffect(() => {
 		void check()
-	}, [check, refreshKey])
+	}, [check])
 
 	return { isOnline, isChecking, retry: check }
 }

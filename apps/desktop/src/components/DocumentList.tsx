@@ -320,7 +320,9 @@ export default function DocumentList({
 										</div>
 									</td>
 									<td className="py-4 px-4">
-										<span className="text-sm">{doc.sourceLocale} → {doc.targetLocale}</span>
+										<span className="text-sm">
+											{doc.sourceLocale} → {doc.targetLocale}
+										</span>
 									</td>
 									<td className="py-4 px-4">
 										<span className={`text-sm font-medium ${STATUS_COLORS[doc.status]}`}>
@@ -355,7 +357,11 @@ export default function DocumentList({
 												<Button onClick={() => onReview(doc.id)}>Review</Button>
 											)}
 											{doc.status === 'error' && (
-												<Button variant="destructive" size="sm" onClick={() => onProcess(doc.sourceDocId)}>
+												<Button
+													variant="destructive"
+													size="sm"
+													onClick={() => onProcess(doc.sourceDocId)}
+												>
 													Retry
 												</Button>
 											)}
@@ -433,7 +439,9 @@ export default function DocumentList({
 										</div>
 									</td>
 									<td className="py-4 px-4">
-										<span className="text-sm">{doc.sourceLocale} → {doc.targetLocale}</span>
+										<span className="text-sm">
+											{doc.sourceLocale} → {doc.targetLocale}
+										</span>
 									</td>
 									<td className="py-4 px-4">
 										<span className={`text-sm font-medium ${STATUS_COLORS[doc.status]}`}>

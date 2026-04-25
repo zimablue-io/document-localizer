@@ -1,4 +1,4 @@
-import { Shield, Brain, GitCompare, FileText } from 'lucide-react'
+import { Brain, FileText, GitCompare, Shield } from 'lucide-react'
 import { OpenSourceIcon } from './Icons'
 
 const features = [
@@ -35,9 +35,7 @@ export default function Features() {
 			<div className="max-w-6xl mx-auto w-full">
 				<div className="text-center mb-8">
 					<h2 className="text-2xl font-bold mb-1">Everything you need</h2>
-					<p className="text-muted-foreground text-sm">
-						Localize documents with confidence.
-					</p>
+					<p className="text-muted-foreground text-sm">Localize documents with confidence.</p>
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -50,9 +48,7 @@ export default function Features() {
 								<feature.icon className="w-4 h-4 text-primary" />
 							</div>
 							<h3 className="text-sm font-semibold mb-0.5">{feature.title}</h3>
-							<p className="text-muted-foreground text-xs">
-								{feature.description}
-							</p>
+							<p className="text-muted-foreground text-xs">{feature.description}</p>
 						</div>
 					))}
 				</div>
