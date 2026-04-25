@@ -68,14 +68,14 @@ export default function Hero() {
 
 					<div className="flex gap-4 pt-4">
 						<a
-							href="https://github.com/lefamoffat/document-localizer/releases"
+							href="https://github.com/zimablue-io/document-localizer/releases"
 							className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all hover:scale-105 shadow-lg shadow-primary/25 animate-glow"
 						>
 							<Download className="w-5 h-5" />
 							Download for macOS
 						</a>
 						<a
-							href="https://github.com/lefamoffat/document-localizer"
+							href="https://github.com/zimablue-io/document-localizer"
 							className="inline-flex items-center gap-2 px-6 py-3 border border-border rounded-lg font-medium hover:bg-card transition-all hover:scale-105"
 						>
 							<GitHubIcon className="w-5 h-5" />

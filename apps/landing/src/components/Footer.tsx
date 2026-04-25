@@ -8,7 +8,7 @@ export default function Footer() {
 					Document Localizer
 				</div>
 				<a
-					href="https://github.com/lefamoffat/document-localizer"
+					href="https://github.com/zimablue-io/document-localizer"
 					className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
 				>
 					<GitHubIcon className="w-4 h-4" />
