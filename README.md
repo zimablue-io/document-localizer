@@ -2,6 +2,14 @@
 
 A monorepo for document localization using AI.
 
+## Quick Start
+
+```bash
+pnpm install
+pnpm dev:desktop   # Start desktop app
+pnpm dev:landing    # Start landing page
+```
+
 ## Architecture
 
 ```
@@ -79,3 +87,7 @@ cd apps/landing && pnpm dev
 # Build core package
 cd packages/core && pnpm build
 ```
+
+## Contributing
+
+See [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) for development setup and contribution guidelines.
