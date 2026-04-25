@@ -1,5 +1,5 @@
 import { Button } from '@doclocalizer/ui'
-import { ChevronDown, History, RefreshCw } from 'lucide-react'
+import { ChevronDown, FolderOpen, History, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 // Custom hook for connection checking
@@ -49,7 +49,6 @@ interface HeaderProps {
 	isConfigured: boolean
 	connectionRefreshKey?: number
 	onSelectFiles: () => void
-	onProcessAll: () => void
 	onOpenSettings: () => void
 	onOpenHistory: () => void
 	onModelChange?: (modelId: string) => void
@@ -63,12 +62,10 @@ export default function Header({
 	isConfigured,
 	connectionRefreshKey,
 	onSelectFiles,
-	onProcessAll,
 	onOpenSettings,
 	onOpenHistory,
 	onModelChange,
 }: HeaderProps) {
-	const readyToProcessCount = sourceDocuments.filter((d) => d.sourceLocale && d.targetLocale).length
 	const processingCount = 0
 	const [showDropdown, setShowDropdown] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement>(null)
@@ -198,14 +195,10 @@ export default function Header({
 					</Button>
 				)}
 				{isConfigured && (
-					<>
-						<Button variant="secondary" onClick={onSelectFiles}>
-							Select Files
-						</Button>
-						<Button onClick={onProcessAll} disabled={readyToProcessCount === 0}>
-							Process All ({readyToProcessCount})
-						</Button>
-					</>
+					<Button variant="secondary" onClick={onSelectFiles}>
+						<FolderOpen className="w-4 h-4 mr-1" />
+						Select Files
+					</Button>
 				)}
 				<Button variant="ghost" size="icon" onClick={onOpenHistory} aria-label="History">
 					<History className="w-5 h-5" />

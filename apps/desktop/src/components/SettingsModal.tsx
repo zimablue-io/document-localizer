@@ -1,5 +1,5 @@
 import { Button, Input, Label, ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@doclocalizer/ui'
-import { Check, Edit2, Plus, Trash2 } from 'lucide-react'
+import { Check, Edit2, Plus, RotateCcw, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { ALL_LOCALES } from '../lib/locales'
 import { DEFAULT_LOCALIZATION_PROMPT } from '../lib/prompts'
@@ -265,6 +265,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 							<div className="flex items-center justify-between">
 								<Label htmlFor="prompt">Localization Prompt</Label>
 								<Button variant="link" size="sm" onClick={handleResetPrompt}>
+									<RotateCcw className="w-4 h-4 mr-1" />
 									Reset
 								</Button>
 							</div>
@@ -285,9 +286,13 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 
 				<div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
 					<Button variant="outline" onClick={onClose}>
+						<X className="w-4 h-4 mr-1" />
 						Cancel
 					</Button>
-					<Button onClick={onSave}>Save</Button>
+					<Button onClick={onSave}>
+						<Check className="w-4 h-4 mr-1" />
+						Save
+					</Button>
 				</div>
 			</div>
 		</div>

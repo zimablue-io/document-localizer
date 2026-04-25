@@ -1,5 +1,6 @@
 import type { TextChange } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
+import { Check, X } from 'lucide-react'
 import ChangeCard from './ChangeCard'
 
 interface ChangeReviewListProps {
@@ -53,12 +54,14 @@ export default function ChangeReviewList({
 					<div className="flex gap-2">
 						{onBulkApprove && (
 							<Button size="sm" variant="secondary" onClick={onBulkApprove}>
-								Approve All Pending ({pendingChanges.length})
+								<Check className="w-4 h-4 mr-1" />
+								Approve All ({pendingChanges.length})
 							</Button>
 						)}
 						{onBulkReject && (
 							<Button size="sm" variant="destructive" onClick={onBulkReject}>
-								Reject All Pending
+								<X className="w-4 h-4 mr-1" />
+								Reject All
 							</Button>
 						)}
 					</div>

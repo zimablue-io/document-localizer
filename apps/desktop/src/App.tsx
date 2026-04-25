@@ -162,14 +162,6 @@ export default function App() {
 		[sourceDocs, settings, activeModelName, pausedChunkIndex, setTasksDocs, isConfigured]
 	)
 
-	const handleProcessAll = useCallback(() => {
-		sourceDocs.forEach((d) => {
-			if (d.sourceLocale && d.targetLocale) {
-				void handleProcess(d.id)
-			}
-		})
-	}, [sourceDocs, handleProcess])
-
 	const handleStop = useCallback(
 		(id: string) => {
 			setTasksDocs((prev) => prev.filter((d) => d.id !== id))
@@ -421,7 +413,6 @@ export default function App() {
 				isConfigured={!!isConfigured}
 				connectionRefreshKey={connectionRefreshKey}
 				onSelectFiles={handleSelectFiles}
-				onProcessAll={handleProcessAll}
 				onOpenSettings={() => setShowSettings(true)}
 				onOpenHistory={() => setShowHistory(true)}
 				onModelChange={(modelId) => setSettings((prev) => (prev ? { ...prev, activeModelId: modelId } : null))}

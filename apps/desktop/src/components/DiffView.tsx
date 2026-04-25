@@ -1,5 +1,6 @@
 import { Button } from '@doclocalizer/ui'
 import { diffWords } from 'diff'
+import { Check, LayoutList, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
 interface DiffViewProps {
@@ -192,14 +193,19 @@ export default function DiffViewComponent({
 							variant={viewMode === 'list' ? 'default' : 'ghost'}
 							onClick={() => setViewMode('list')}
 						>
+							<LayoutList className="w-4 h-4 mr-1" />
 							List
 						</Button>
 					</div>
 
 					<Button variant="outline" onClick={onReject}>
+						<X className="w-4 h-4 mr-1" />
 						Reject
 					</Button>
-					<Button onClick={onApprove}>Approve All</Button>
+					<Button onClick={onApprove}>
+						<Check className="w-4 h-4 mr-1" />
+						Approve All
+					</Button>
 				</div>
 			</div>
 

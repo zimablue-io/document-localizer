@@ -1,6 +1,6 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
-import { ChevronDown, FileText, FileType } from 'lucide-react'
+import { ChevronDown, Eye, FileText, FileType, Pause, Play, RotateCcw, Square, Zap } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LocaleSelect, STATUS_COLORS, STATUS_LABELS, StatusIcon } from './document-helpers'
 
@@ -240,6 +240,7 @@ export default function DocumentList({
 												onClick={() => onProcess(doc.id)}
 												disabled={!doc.sourceLocale || !doc.targetLocale}
 											>
+												<Zap className="w-4 h-4 mr-1" />
 												Process
 											</Button>
 											<Button
@@ -340,21 +341,27 @@ export default function DocumentList({
 										<div className="flex items-center justify-end gap-2">
 											{(doc.status === 'parsing' || doc.status === 'localizing') && onStop && (
 												<Button variant="destructive" size="sm" onClick={() => onStop(doc.id)}>
+													<Square className="w-4 h-4 mr-1" />
 													Stop
 												</Button>
 											)}
 											{doc.status === 'localizing' && onPause && (
 												<Button variant="outline" size="sm" onClick={() => onPause(doc.id)}>
+													<Pause className="w-4 h-4 mr-1" />
 													Pause
 												</Button>
 											)}
 											{doc.status === 'paused' && onResume && (
 												<Button variant="outline" size="sm" onClick={() => onResume(doc.id)}>
+													<Play className="w-4 h-4 mr-1" />
 													Resume
 												</Button>
 											)}
 											{doc.status === 'review' && (
-												<Button onClick={() => onReview(doc.id)}>Review</Button>
+												<Button onClick={() => onReview(doc.id)}>
+													<Eye className="w-4 h-4 mr-1" />
+													Review
+												</Button>
 											)}
 											{doc.status === 'error' && (
 												<Button
@@ -362,6 +369,7 @@ export default function DocumentList({
 													size="sm"
 													onClick={() => onProcess(doc.sourceDocId)}
 												>
+													<RotateCcw className="w-4 h-4 mr-1" />
 													Retry
 												</Button>
 											)}
