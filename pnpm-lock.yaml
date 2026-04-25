@@ -41,12 +41,6 @@ importers:
       diff:
         specifier: ^9.0.0
         version: 9.0.0
-      electron:
-        specifier: ^33.4.0
-        version: 33.4.11
-      electron-builder:
-        specifier: ^26.0.12
-        version: 26.8.1(electron-builder-squirrel-windows@26.8.1)
       electron-updater:
         specifier: ^6.3.9
         version: 6.8.3
@@ -81,6 +75,12 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.1(vite@8.0.9(@types/node@22.19.17)(jiti@2.6.1)(yaml@2.8.3))
+      electron:
+        specifier: ^33.4.0
+        version: 33.4.11
+      electron-builder:
+        specifier: ^26.0.12
+        version: 26.8.1(electron-builder-squirrel-windows@26.8.1)
       tailwindcss:
         specifier: ^4.2.3
         version: 4.2.3
