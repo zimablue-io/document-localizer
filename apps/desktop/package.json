@@ -9,6 +9,14 @@
     "owner": "zimablue-io",
     "repo": "document-localizer"
   },
+  "build": {
+    "appId": "io.doclocalizer.app",
+    "productName": "Document Localizer",
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.developer-tools"
+    }
+  },
   "scripts": {
     "dev": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js && NODE_ENV=production electron .",
     "dev:web": "vite",
