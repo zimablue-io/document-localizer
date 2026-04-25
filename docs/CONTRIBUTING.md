@@ -81,3 +81,7 @@ Please include:
 ## Questions?
 
 Open an issue or start a discussion on GitHub.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the same license as this project. See [LICENSE.md](./LICENSE.md) for details.

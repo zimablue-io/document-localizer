@@ -2,8 +2,10 @@
 	"name": "doclocalizer",
 	"version": "0.1.0",
 	"private": true,
+	"author": "zimablue-io",
 	"type": "module",
 	"description": "Document localization with AI",
+	"license": "SEE LICENSE IN LICENSE.md",
 	"workspaces": [
 		"packages/*",
 		"apps/*"

@@ -3,6 +3,7 @@
   "version": "0.1.4",
   "description": "AI-powered document localization for privacy-conscious teams",
   "author": "zimablue-io",
+  "license": "SEE LICENSE IN ../../LICENSE.md",
   "main": "dist-electron/main.cjs",
   "publish": {
     "provider": "github",

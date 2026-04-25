@@ -91,3 +91,7 @@ cd packages/core && pnpm build
 ## Contributing
 
 See [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) for development setup and contribution guidelines.
+
+## License
+
+Copyright (c) 2024-2026 zimablue-io. Free for personal/non-commercial use. See [docs/LICENSE.md](./docs/LICENSE.md).
