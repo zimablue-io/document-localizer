@@ -1,0 +1,41 @@
+# Document Localizer
+
+AI-powered document localization tool that transforms documents between American and British English.
+
+## What It Does
+
+- Transform documents between American and British English variants
+- Works entirely on your local machine - documents never leave your computer
+- PDF and Markdown support
+- Side-by-side diff review before export
+
+## How It Works
+
+1. Upload PDF or Markdown files
+2. Select source and target locales (e.g., American English → British English)
+3. AI localizes the content locally via Ollama, LM Studio, or llama.cpp
+4. Review changes in a diff view
+5. Export approved documents
+
+## System Requirements
+
+- macOS 12+
+- Local AI backend (Ollama, LM Studio, or llama.cpp)
+- 4GB+ RAM (8GB recommended)
+- ~5GB disk per AI model
+
+## Links
+
+- Downloads: https://github.com/zimablue-io/document-localizer/releases
+- Source Code: https://github.com/zimablue-io/document-localizer
+- Issues: https://github.com/zimablue-io/document-localizer/issues
+
+## Supported Platforms
+
+Currently available for macOS only.
+Windows and Linux builds are planned.
+
+## License
+
+Copyright (c) 2024-2026 zimablue-io. Free for personal/non-commercial use only.
+Commercial use requires written permission. See LICENSE.md for details.

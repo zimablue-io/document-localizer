@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zimablue-io.github.io/document-localizer/sitemap.xml
