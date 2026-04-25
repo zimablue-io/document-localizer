@@ -2,38 +2,55 @@
 
 ## Architecture
 
-> **Electron + React desktop application** with Vite bundler
-
 ```
 apps/
-└── desktop/                    # Electron + React desktop app
-    ├── src/                    # React frontend
+├── desktop/                    # Electron + React desktop app
+│   ├── src/
+│   │   ├── App.tsx            # Main app (orchestration only)
+│   │   ├── components/        # UI components (DiffView, SettingsModal, etc.)
+│   │   ├── lib/               # Utilities (export, utils)
+│   │   ├── types/             # TypeScript declarations
+│   │   └── main.tsx          # React entry point
+│   ├── electron/              # Electron main process
+│   │   ├── main.ts            # Main process (IPC handlers, file dialogs)
+│   │   └── preload.ts         # Context bridge for renderer
+│   └── dist-electron/          # Compiled Electron (auto-generated)
+└── landing/                    # Marketing landing page (React + Vite)
+    ├── src/
     │   ├── App.tsx            # Main app (orchestration only)
-    │   ├── components/        # UI components (DiffView, SettingsModal, etc.)
-    │   ├── lib/               # Utilities (export, utils)
-    │   ├── types/             # TypeScript declarations
-    │   └── main.tsx           # React entry point
-    ├── electron/              # Electron main process
-    │   ├── main.ts            # Main process (IPC handlers, file dialogs)
-    │   └── preload.ts          # Context bridge for renderer
-    └── dist-electron/         # Compiled Electron (auto-generated)
-    
+    │   ├── components/        # Hero, Features, StepViewer, SetupGuide, Navigation
+    │   └── hooks/             # useActiveSection hook
+    └── public/images/         # App screenshots for How It Works section
+
 packages/
-└── core/                      # Shared business logic
-    └── src/
-        ├── services/
-        │   ├── openai-client.ts   # OpenAI-compatible API client
-        │   ├── file-processor.ts   # File processing (PDF/MD)
-        │   └── localize.ts
-        └── utils/chunk.ts
+├── core/                       # Shared business logic
+│   └── src/
+│       ├── services/            # openai-client, file-processor, localize, diff
+│       └── utils/              # chunk, change-detection, chunk-manager
+└── ui/                         # Shared UI components
+    └── src/components/ui/       # Button, Input, Dialog, etc.
 ```
 
 ### Tech Stack
 
-- **Frontend**: React + TypeScript + Vite + Tailwind CSS v4
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS v4
 - **Desktop**: Electron 33 (not Tauri!)
+- **Landing Page**: React 18 + Vite (port 1421)
 - **PDF Parsing**: `@doclocalizer/core` (pdfjs-dist based, runs in renderer)
 - **Settings**: JSON file stored in `app.getPath('userData')` via Electron IPC
+
+## Apps
+
+### Desktop App (`apps/desktop`)
+The main Electron desktop application for document localization.
+
+### Landing Page (`apps/landing`)
+Marketing landing page at http://localhost:1421 with:
+- Hero section with animated transformation demo
+- Features section (5 cards: Private, AI-Powered, You Control, PDF & Markdown, Open Source)
+- Interactive StepViewer with scroll-driven navigation and app screenshots
+- SetupGuide with horizontal tabs for Ollama, LM Studio, and llama.cpp
+- Floating Navigation sidebar with hover-expand labels
 
 ## Key Patterns
 
@@ -57,7 +74,7 @@ Renderer accesses via `window.electron.*` (defined in `electron/preload.ts`)
 - Processed outputs stored in: `~/Library/Application Support/document-localizer/processed.json`
 - MAX_HISTORY_ITEMS: 100
 
-### Three-Tab Architecture
+### Three-Tab Architecture (Desktop)
 
 The app uses three separate lists to track documents:
 
@@ -80,14 +97,17 @@ The app uses three separate lists to track documents:
 9. User approves/rejects → moves to Processed tab
 10. User can export approved items, or retry errored items
 
-## Running the App
+## Running the Apps
 
 ```bash
-# Development
+# Development - Desktop
 cd apps/desktop && pnpm dev
 
-# Production build
-cd apps/desktop && pnpm run build
+# Development - Landing Page
+cd apps/landing && pnpm dev
+
+# Production build - Landing Page
+cd apps/landing && pnpm build
 ```
 
 ## File Naming Conventions
@@ -95,8 +115,9 @@ cd apps/desktop && pnpm run build
 - TypeScript files: PascalCase for React components, camelCase for utilities
 - Electron files: camelCase
 - Settings keys: camelCase
+- Landing page components: PascalCase (Hero.tsx, Features.tsx, etc.)
 
-## Configuration Defaults
+## Configuration Defaults (Desktop)
 
 - API URL: `http://localhost:8080/v1` (OpenAI-compatible)
 - Model: `llama:3.2:3b-instruct`
@@ -110,4 +131,5 @@ cd apps/desktop && pnpm run build
 - PDF parsing happens in renderer via `pdfjs-dist`
 - AI calls use Electron's built-in `net.fetch` (Chromium networking)
 - All file operations go through IPC (no direct fs access in renderer)
-- Vite dev server runs on port 1420
+- Desktop Vite dev server runs on port 1420
+- Landing Vite dev server runs on port 1421

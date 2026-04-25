@@ -6,42 +6,76 @@ A monorepo for document localization using AI.
 
 ```
 ├── apps/
-│   └── web/          # React web app (Vite)
+│   ├── desktop/          # Electron desktop app (Vite, port 1420)
+│   └── landing/          # Marketing landing page (Vite, port 1421)
 ├── packages/
-│   └── core/         # Shared business logic
-└── workspace/        # User files (future)
+│   ├── core/             # Shared business logic
+│   └── ui/               # Shared UI components
 ```
+
+## Apps
+
+### @doclocalizer/desktop
+Electron desktop application for document localization:
+- PDF and Markdown file processing
+- AI-powered localization via local LLMs (Ollama, LM Studio, llama.cpp)
+- Side-by-side diff view with paragraph editing
+- Three-tab system: Uploaded (source library) → Tasks (processing) → Processed (completed)
+- Export to Markdown or PDF
+
+### @doclocalizer/landing
+Marketing landing page at http://localhost:1421:
+- Hero section with animated transformation demo
+- Features section (5 cards)
+- Interactive StepViewer with app screenshots
+- SetupGuide with tabs for Ollama, LM Studio, and llama.cpp
+- Floating navigation sidebar
 
 ## Packages
 
 ### @doclocalizer/core
 Core business logic for document localization:
-- PDF to Markdown conversion
+- PDF to Markdown conversion (pdfjs-dist)
 - Text chunking for LLM processing
-- Ollama client for local LLM inference
+- OpenAI-compatible API client
 - Diff generation for review
 
-### @doclocalizer/web
-React web app for:
-- Drag & drop PDF upload
-- Document list management
-- Diff review interface
-- Export workflow
+### @doclocalizer/ui
+Shared UI components:
+- Button, Input, Dialog, Select, Tabs
+- ScrollArea, AlertDialog, Sheet
+- Built with Tailwind CSS v4
 
 ## Scripts
 
 ```bash
-pnpm install          # Install dependencies
-pnpm dev              # Start web app
-pnpm build            # Build core package
+# Install dependencies
+pnpm install
+
+# Development - Desktop
+pnpm dev:desktop
+
+# Development - Landing
+pnpm dev:landing
+
+# Build
+pnpm build:core        # Build core package
+pnpm build:landing     # Build landing page
+pnpm build:desktop     # Build desktop app
+
+# Lint
+pnpm lint
 ```
 
 ## Development
 
 ```bash
-# Start web app
-cd apps/web && pnpm dev
+# Start desktop app
+cd apps/desktop && pnpm dev
 
-# Build core
+# Start landing page
+cd apps/landing && pnpm dev
+
+# Build core package
 cd packages/core && pnpm build
 ```
