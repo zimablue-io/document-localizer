@@ -95,14 +95,23 @@ export default function Header({
 				<h1 className="text-xl font-semibold">Document Localizer</h1>
 				{activeModel && (
 					<div className="relative" ref={dropdownRef}>
-						<button
+						<div
+							role="button"
+							tabIndex={0}
 							onClick={() => {
 								if (processingCount === 0) {
 									setShowDropdown(!showDropdown)
 								}
 							}}
+							onKeyDown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									if (processingCount === 0) {
+										setShowDropdown(!showDropdown)
+									}
+								}
+							}}
 							className={`flex items-center gap-1.5 px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors ${
-								processingCount > 0 ? 'cursor-default' : ''
+								processingCount > 0 ? 'cursor-default' : 'cursor-pointer'
 							}`}
 							title={`Model: ${activeModel.name}\nAPI: ${apiUrl}\n${processingCount > 0 ? 'Processing documents...' : 'Click to change model'}`}
 						>
@@ -131,7 +140,7 @@ export default function Header({
 								</button>
 							</div>
 							<ChevronDown className="w-3 h-3" />
-						</button>
+						</div>
 						{showDropdown && models && models.length > 0 && (
 							<div className="absolute left-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-xl py-1 min-w-[180px]">
 								<div className="px-3 py-1.5 text-xs text-muted-foreground border-b border-border">
