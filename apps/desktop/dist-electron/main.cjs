@@ -56,12 +56,15 @@ function setupAutoUpdater() {
     });
     electron_updater_1.autoUpdater.on('error', (err) => {
         log('Auto-updater error:', err.message);
+        // Don't crash the app if auto-updater fails
     });
 }
 // Check for updates (skip in dev mode)
 function checkForUpdates() {
     if (process.env.NODE_ENV === 'production') {
-        electron_updater_1.autoUpdater.checkForUpdates();
+        electron_updater_1.autoUpdater.checkForUpdates().catch((err) => {
+            log('Update check failed (this is normal if not published yet):', err.message);
+        });
     }
 }
 let mainWindow = null;
@@ -79,8 +82,8 @@ function createWindow() {
     });
     // For vite build (production), load from dist folder
     // For vite dev server, load from localhost
-    const isDev = process.env.NODE_ENV !== 'production';
-    console.log('[electron] NODE_ENV:', process.env.NODE_ENV, 'isDev:', isDev);
+    const isDev = !electron_1.app.isPackaged;
+    console.log('[electron] isPackaged:', electron_1.app.isPackaged, 'isDev:', isDev);
     console.log('[electron] __dirname:', __dirname);
     console.log('[electron] loading from:', isDev ? 'localhost:1420' : node_path_1.default.join(__dirname, '../dist/index.html'));
     if (isDev) {

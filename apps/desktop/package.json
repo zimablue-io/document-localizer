@@ -17,12 +17,14 @@
       "dist-electron/**/*"
     ],
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "category": "public.app-category.developer-tools"
     }
   },
   "scripts": {
-    "dev": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js && NODE_ENV=production electron .",
+    "dev": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && concurrently \"vite\" \"tsc -p tsconfig.electron.json && node scripts/rename-cjs.js && electron .\"",
     "dev:web": "vite",
     "build": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js",
     "preview": "vite preview",
@@ -48,6 +50,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
     "electron": "^33.4.0",
     "electron-builder": "^26.0.12",
     "tailwindcss": "^4.2.3",
