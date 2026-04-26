@@ -123,6 +123,15 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 												isEnabled ? 'bg-primary/10' : 'hover:bg-secondary'
 											}`}
 											onClick={() => toggleLocale(locale.code)}
+											onKeyDown={(e) => {
+												if (e.key === 'Enter' || e.key === ' ') {
+													e.preventDefault()
+													toggleLocale(locale.code)
+												}
+											}}
+											role="checkbox"
+											aria-checked={isEnabled}
+											tabIndex={0}
 										>
 											<div
 												className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${

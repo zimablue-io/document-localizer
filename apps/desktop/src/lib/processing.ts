@@ -3,7 +3,7 @@
  */
 import { convertPdfToMarkdown } from '@doclocalizer/core'
 import { DISK_WRITE_INTERVAL, PROCESSING_CONCURRENCY } from './config'
-import { getOutputPath, isPdfPath, readPdfFile, readTextFile } from './files'
+import { getOutputFileName, getOutputPath, isPdfPath, readPdfFile, readTextFile } from './files'
 import { buildPrompt, DEFAULT_TRANSLATION_PROMPT } from './prompts'
 import type { ProcessingOutput, SourceDocument } from './types'
 

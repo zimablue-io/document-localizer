@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-	buildPrompt,
-	DEFAULT_LOCALIZATION_PROMPT,
-	DEFAULT_TRANSLATION_PROMPT,
-} from '../../src/lib/prompts'
+import { buildPrompt, DEFAULT_LOCALIZATION_PROMPT, DEFAULT_TRANSLATION_PROMPT } from '../../src/lib/prompts'
 
 describe('lib/prompts', () => {
 	describe('DEFAULT_TRANSLATION_PROMPT', () => {

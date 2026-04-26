@@ -42,7 +42,6 @@ interface ModelConfig {
 }
 
 interface HeaderProps {
-	sourceDocuments: { id: string; name: string; sourceLocale?: string; targetLocale?: string }[]
 	models?: ModelConfig[]
 	activeModelId?: string
 	apiUrl?: string
@@ -55,7 +54,6 @@ interface HeaderProps {
 }
 
 export default function Header({
-	sourceDocuments,
 	models,
 	activeModelId,
 	apiUrl,
@@ -126,6 +124,7 @@ export default function Header({
 									}`}
 								/>
 								<button
+									type="button"
 									onClick={(e) => {
 										e.stopPropagation()
 										void handleRetryConnection()
@@ -145,6 +144,7 @@ export default function Header({
 								</div>
 								{models.map((model) => (
 									<button
+										type="button"
 										key={model.id}
 										className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
 											model.id === activeModelId ? 'bg-primary/10 text-primary' : ''
@@ -161,6 +161,7 @@ export default function Header({
 												fill="none"
 												viewBox="0 0 24 24"
 												stroke="currentColor"
+												aria-label="Selected"
 											>
 												<path
 													strokeLinecap="round"
@@ -174,6 +175,7 @@ export default function Header({
 								))}
 								<div className="border-t border-border pt-1 mt-1">
 									<button
+										type="button"
 										className="w-full px-3 py-2 text-left text-sm hover:bg-muted text-muted-foreground"
 										onClick={() => {
 											setShowDropdown(false)

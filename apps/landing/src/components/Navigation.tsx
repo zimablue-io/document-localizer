@@ -75,9 +75,7 @@ export default function Navigation() {
 									key={item.id}
 									onClick={() => scrollToSection(item.id)}
 									className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
-										isActive
-											? 'text-primary bg-primary/10'
-											: 'text-foreground hover:bg-secondary'
+										isActive ? 'text-primary bg-primary/10' : 'text-foreground hover:bg-secondary'
 									}`}
 								>
 									<Icon className="w-4 h-4" />

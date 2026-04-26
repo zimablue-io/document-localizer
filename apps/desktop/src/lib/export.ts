@@ -43,9 +43,9 @@ export function markdownToPlainText(markdown: string): string {
 }
 
 export function contentToPdf(content: string, filename: string): Blob {
-	const doc = new jsPDF()
-	const pageWidth = doc.getPageWidth()
-	const pageHeight = doc.getPageHeight()
+	const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+	const pageWidth = doc.internal.pageSize.getWidth()
+	const pageHeight = doc.internal.pageSize.getHeight()
 	const margin = 20
 	const maxWidth = pageWidth - margin * 2
 	const lineHeight = 7

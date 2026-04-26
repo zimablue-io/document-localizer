@@ -188,6 +188,8 @@ export default function DocumentList({
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
+							aria-label="Document icon"
+							role="img"
 						>
 							<path
 								strokeLinecap="round"
@@ -279,6 +281,8 @@ export default function DocumentList({
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
+							aria-label="Tasks icon"
+							role="img"
 						>
 							<path
 								strokeLinecap="round"
@@ -409,6 +413,8 @@ export default function DocumentList({
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
+							aria-label="Completed icon"
+							role="img"
 						>
 							<path
 								strokeLinecap="round"

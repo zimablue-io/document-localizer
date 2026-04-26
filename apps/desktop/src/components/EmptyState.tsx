@@ -87,6 +87,13 @@ export default function EmptyState({ onFilesAdded, onSelectFiles }: EmptyStatePr
 				}`}
 				style={{ minWidth: '400px', minHeight: '300px' }}
 				onClick={handleClick}
+				onKeyDown={(e) => {
+					if (e.key === 'Enter' || e.key === ' ') {
+						handleClick()
+					}
+				}}
+				role="button"
+				tabIndex={0}
 			>
 				<Upload className={`w-20 h-20 mb-6 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
 				<p className={`text-xl mb-2 ${isDragging ? 'text-primary' : ''}`}>

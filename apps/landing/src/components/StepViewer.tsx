@@ -41,7 +41,7 @@ export default function StepViewer() {
 			(entries) => {
 				entries.forEach((entry) => {
 					if (entry.isIntersecting) {
-						const index = stepRefs.current.findIndex((ref) => ref === entry.target)
+						const index = stepRefs.current.indexOf(entry.target)
 						if (index !== -1) {
 							setActiveStep(index)
 						}

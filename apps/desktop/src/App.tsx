@@ -86,14 +86,20 @@ export default function App() {
 			setTasksDocs((prev) => [...prev, newOutput])
 			toast.info(`Processing ${sourceDoc.name} to ${targetLocale}...`)
 
-			const historyEntry = await window.electron.addHistory({
-				fileName: sourceDoc.name,
-				filePath: sourceDoc.path,
-				sourceLocale,
-				targetLocale,
-				processedAt: new Date().toISOString(),
-				status: 'processed',
-			})
+			let historyEntry: Awaited<ReturnType<typeof window.electron.addHistory>> | undefined
+			try {
+				historyEntry = await window.electron.addHistory({
+					fileName: sourceDoc.name,
+					filePath: sourceDoc.path,
+					sourceLocale,
+					targetLocale,
+					processedAt: new Date().toISOString(),
+					status: 'processed',
+				})
+			} catch (err) {
+				toast.error(`Failed to create history entry: ${formatError(err)}`)
+				return
+			}
 
 			try {
 				const result = await processDocument({
@@ -406,7 +412,6 @@ export default function App() {
 			<Toaster position="bottom-right" richColors closeButton />
 
 			<Header
-				sourceDocuments={sourceDocs}
 				models={settings?.models}
 				activeModelId={settings?.activeModelId}
 				apiUrl={settings?.apiUrl}

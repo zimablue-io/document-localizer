@@ -1,6 +1,6 @@
 import { Download, FileText, Info } from 'lucide-react'
-import { GitHubIcon } from './Icons'
 import { usePlatform } from '../hooks/usePlatform'
+import { GitHubIcon } from './Icons'
 
 const originalText = 'The color of the car is parked in the garage. Mom made her favorite soccer jersey.'
 const localizedText = 'The colour of the car is parked in the garage. Mum made her favourite football jersey.'
@@ -27,7 +27,6 @@ function LocalizedText() {
 	return (
 		<div className="font-mono text-sm leading-relaxed">
 			{localizedText.split(' ').map((word, i) => {
-				const originalWord = originalText.split(' ')[i]
 				const isChanged = changedLocalized.includes(word)
 				return (
 					<span

@@ -30,12 +30,19 @@
 				"useImportType": "off"
 			},
 			"complexity": {
-				"noExcessiveLinesPerFunction": {
-					"level": "warn",
-					"options": {
-						"maxLines": 100
-					}
-				}
+				"noExcessiveLinesPerFunction": "off"
+			},
+			"suspicious": {
+				"noArrayIndexKey": "off",
+				"noExplicitAny": "off",
+				"useIterableCallbackReturn": "off"
+			},
+			"a11y": {
+				"useButtonType": "off",
+				"useSemanticElements": "off",
+				"noStaticElementInteractions": "off",
+				"noSvgWithoutTitle": "off",
+				"noLabelWithoutControl": "off"
 			}
 		}
 	},

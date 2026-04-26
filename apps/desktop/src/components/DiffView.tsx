@@ -38,7 +38,10 @@ function OriginalColumn({ origPara, locPara }: { origPara: string; locPara: stri
 				if (part.removed) {
 					// Word removed/changed - highlight in red
 					return (
-						<span key={i} className="bg-red-900/50 text-red-300 px-0.5 rounded-sm mx-[-1px]">
+						<span
+							key={`removed-${i}-${part.value.slice(0, 10)}`}
+							className="bg-red-900/50 text-red-300 px-0.5 rounded-sm mx-[-1px]"
+						>
 							{part.value}
 						</span>
 					)
@@ -48,7 +51,7 @@ function OriginalColumn({ origPara, locPara }: { origPara: string; locPara: stri
 					return null
 				}
 				// Unchanged text
-				return <span key={i}>{part.value}</span>
+				return <span key={`unchanged-${i}-${part.value.slice(0, 10)}`}>{part.value}</span>
 			})}
 		</span>
 	)
@@ -85,7 +88,10 @@ function LocalizedColumn({
 			{diff.map((part, i) => {
 				if (part.added) {
 					return (
-						<span key={i} className="bg-green-900/50 text-green-300 px-0.5 rounded-sm mx-[-1px]">
+						<span
+							key={`added-${i}-${part.value.slice(0, 10)}`}
+							className="bg-green-900/50 text-green-300 px-0.5 rounded-sm mx-[-1px]"
+						>
 							{part.value}
 						</span>
 					)
@@ -93,7 +99,7 @@ function LocalizedColumn({
 				if (part.removed) {
 					return null
 				}
-				return <span key={i}>{part.value}</span>
+				return <span key={`unchanged-${i}-${part.value.slice(0, 10)}`}>{part.value}</span>
 			})}
 		</span>
 	)
@@ -167,7 +173,13 @@ export default function DiffViewComponent({
 			<div className="flex items-center justify-between p-4 border-b border-border">
 				<div className="flex items-center gap-4">
 					<Button variant="ghost" size="icon" onClick={onBack} aria-label="Go back">
-						<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<svg
+							className="w-5 h-5"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							aria-label="Go back"
+						>
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
 						</svg>
 					</Button>
@@ -263,12 +275,14 @@ export default function DiffViewComponent({
 															disabled={index === 0}
 															className="p-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed"
 															title="Shift up"
+															aria-label="Shift up"
 														>
 															<svg
 																className="w-3 h-3"
 																fill="none"
 																viewBox="0 0 24 24"
 																stroke="currentColor"
+																aria-hidden="true"
 															>
 																<path
 																	strokeLinecap="round"
@@ -283,12 +297,14 @@ export default function DiffViewComponent({
 															disabled={index === paragraphChanges.length - 1}
 															className="p-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed"
 															title="Shift down"
+															aria-label="Shift down"
 														>
 															<svg
 																className="w-3 h-3"
 																fill="none"
 																viewBox="0 0 24 24"
 																stroke="currentColor"
+																aria-hidden="true"
 															>
 																<path
 																	strokeLinecap="round"
@@ -316,12 +332,14 @@ export default function DiffViewComponent({
 															onClick={() => handleStartEdit(index, locPara)}
 															className="p-1 rounded bg-green-900/30 hover:bg-green-800/50 text-green-300"
 															title="Edit this paragraph"
+															aria-label="Edit this paragraph"
 														>
 															<svg
 																className="w-3 h-3"
 																fill="none"
 																viewBox="0 0 24 24"
 																stroke="currentColor"
+																aria-hidden="true"
 															>
 																<path
 																	strokeLinecap="round"
@@ -335,12 +353,14 @@ export default function DiffViewComponent({
 															onClick={() => handleDeleteParagraph(index)}
 															className="p-1 rounded bg-red-900/30 hover:bg-red-800/50 text-red-300"
 															title="Delete paragraph"
+															aria-label="Delete paragraph"
 														>
 															<svg
 																className="w-3 h-3"
 																fill="none"
 																viewBox="0 0 24 24"
 																stroke="currentColor"
+																aria-hidden="true"
 															>
 																<path
 																	strokeLinecap="round"

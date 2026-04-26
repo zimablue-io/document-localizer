@@ -22,7 +22,7 @@ export interface ElectronAPI {
 	loadSettings: () => Promise<unknown>
 	saveSettings: (settings: object) => Promise<boolean>
 	getHistory: () => Promise<unknown[]>
-	addHistory: (entry: object) => Promise<unknown>
+	addHistory: (entry: object) => Promise<{ id: string }>
 	updateHistory: (id: string, updates: object) => Promise<unknown>
 	clearHistory: () => Promise<boolean>
 	loadUploaded: () => Promise<unknown[]>

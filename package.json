@@ -21,11 +21,13 @@
 		"lint:fix": "biome check . --write",
 		"test": "vitest run",
 		"knip": "knip",
-		"knip:fix": "knip --fix"
+		"knip:fix": "knip --fix",
+		"prepare": "husky"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.12",
 		"@types/node": "^22.15.3",
+		"husky": "^9.1.7",
 		"knip": "^6.7.0",
 		"release-please": "^17.0.0",
 		"typescript": "^5.8.3",
