@@ -6,59 +6,39 @@ on:
       - main
     paths:
       - 'apps/desktop/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/desktop/**'
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
 
 jobs:
-  bump-version:
+  release-please:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ steps.release.outputs.version }}
+      released: ${{ steps.release.outputs.released }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: googleapis/release-please-action@v4
+        id: release
         with:
-          node-version: '22'
-
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Install Dependencies
-        run: pnpm install
-
-      - name: Bump version
-        id: version
-        run: |
-          CURRENT_VERSION=$(node -p "require('./apps/desktop/package.json').version")
-          echo "Current version: $CURRENT_VERSION"
-          
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-          NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-          echo "New version: $NEW_VERSION"
-          
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('apps/desktop/package.json', 'utf8'));
-            pkg.version = '$NEW_VERSION';
-            fs.writeFileSync('apps/desktop/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add apps/desktop/package.json
-          git commit -m "chore: bump version to ${NEW_VERSION}"
-          git push origin main
-          
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          package-name: desktop
+          component: desktop
 
   build:
-    needs: bump-version
+    needs: release-please
     runs-on: ${{ matrix.os }}
+    # Run when release-please created a release OR when a tag is pushed
+    if: needs.release-please.outputs.released == 'true' || startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
@@ -73,6 +53,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -92,19 +74,18 @@ jobs:
 
       - name: Find artifacts
         id: artifacts
+        shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            echo "path=apps/desktop/dist/*.dmg" >> $GITHUB_OUTPUT
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            echo "path=apps/desktop/dist/*.exe" >> $GITHUB_OUTPUT
-          else
-            echo "path=apps/desktop/dist/*.AppImage" >> $GITHUB_OUTPUT
-          fi
+          case "${{ matrix.os }}" in
+            macos-latest)  echo "path=apps/desktop/dist/*.dmg" >> $GITHUB_OUTPUT ;;
+            windows-latest) echo "path=apps/desktop/dist/*.exe" >> $GITHUB_OUTPUT ;;
+            *)              echo "path=apps/desktop/dist/*.AppImage" >> $GITHUB_OUTPUT ;;
+          esac
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           files: ${{ steps.artifacts.outputs.path }}
           draft: false
-          tag_name: v${{ needs.bump-version.outputs.version }}
-          name: v${{ needs.bump-version.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}

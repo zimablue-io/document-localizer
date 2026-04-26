@@ -27,6 +27,7 @@
 		"@biomejs/biome": "^2.4.12",
 		"@types/node": "^22.15.3",
 		"knip": "^6.7.0",
+		"release-please": "^17.0.0",
 		"typescript": "^5.8.3",
 		"vitest": "^4.1.4"
 	}
