@@ -1,8 +1,7 @@
 {
   "packages": {
     "apps/desktop": {
-      "release-type": "node",
-      "component": "desktop"
+      "release-type": "node"
     }
   }
 }
