@@ -1,7 +1,8 @@
 {
   "packages": {
     "apps/desktop": {
-      "release-type": "node"
+      "release-type": "node",
+      "tag-pattern": "v${version}"
     }
   }
 }
