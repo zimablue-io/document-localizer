@@ -12,7 +12,12 @@ export default function Footer() {
 					<GitHubIcon className="w-4 h-4" />
 					View on GitHub
 				</a>
-				<div className="text-sm text-muted-foreground">MIT License</div>
+				<div className="text-sm text-muted-foreground">
+					Built with 🩵 by{' '}
+					<a href="https://zimablue.io" target="_blank" rel="noopener" className="hover:underline">
+						Zima Blue
+					</a>
+				</div>
 			</div>
 		</footer>
 	)
