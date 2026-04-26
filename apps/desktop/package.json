@@ -39,7 +39,7 @@
     "dev:web": "vite",
     "build": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && tsc --noEmit && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js",
     "preview": "vite preview",
-    "electron:build": "tsc --noEmit && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js && electron-builder"
+    "electron:build": "pnpm --filter @doclocalizer/core build && pnpm --filter @doclocalizer/ui build && tsc --noEmit && vite build && tsc -p tsconfig.electron.json && node scripts/rename-cjs.js && electron-builder"
   },
   "dependencies": {
     "@doclocalizer/core": "workspace:*",
