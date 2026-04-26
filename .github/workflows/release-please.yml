@@ -18,16 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Enable PR creation for workflows
-        run: |
-          curl -L -X PUT \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/actions/permissions/workflow \
-            -d '{"default_workflow_permissions":"write","can_approve_pull_request_reviews":true}'
-
       - uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          config-file: .release-please-config.json
-          manifest-file: .release-please-manifest.json
+          release-type: node
+          package-name: apps/desktop
+          skip-github-pull-request: true
