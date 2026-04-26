@@ -23,4 +23,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           package-name: apps/desktop
+          tag-prefix: v
           skip-github-pull-request: true
