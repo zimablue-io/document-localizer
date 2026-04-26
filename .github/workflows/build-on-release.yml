@@ -1,44 +1,15 @@
-name: Release
+name: Build Release
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'apps/desktop/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'apps/desktop/**'
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 permissions:
   contents: write
 
 jobs:
-  release-please:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.release.outputs.version }}
-      released: ${{ steps.release.outputs.released }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: googleapis/release-please-action@v4
-        id: release
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
-          package-name: desktop
-          component: desktop
-
   build:
-    needs: release-please
     runs-on: ${{ matrix.os }}
-    # Run when release-please created a release OR when a tag is pushed
-    if: needs.release-please.outputs.released == 'true' || startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
