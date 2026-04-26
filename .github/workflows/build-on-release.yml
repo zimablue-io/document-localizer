@@ -36,7 +36,7 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build Desktop App
         run: pnpm --filter @doclocalizer/desktop electron:build
