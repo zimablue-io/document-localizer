@@ -1,15 +1,19 @@
+import { useState } from 'react'
 import Features from './components/Features'
 import Footer from './components/Footer'
 import Hero from './components/Hero'
 import Navigation from './components/Navigation'
 import SetupGuide from './components/SetupGuide'
 import StepViewer from './components/StepViewer'
+import { Platform } from './hooks/usePlatform'
 
 export default function App() {
+	const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
+
 	return (
 		<div className="min-h-screen flex flex-col">
 			<Navigation />
-			<Hero />
+			<Hero selectedPlatform={selectedPlatform} onPlatformChange={setSelectedPlatform} />
 			<div id="features">
 				<Features />
 			</div>
@@ -17,7 +21,7 @@ export default function App() {
 				<StepViewer />
 			</div>
 			<div id="setup">
-				<SetupGuide />
+				<SetupGuide selectedPlatform={selectedPlatform} />
 			</div>
 			<Footer />
 		</div>

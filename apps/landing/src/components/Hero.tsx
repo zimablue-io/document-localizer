@@ -1,6 +1,25 @@
 import { Download, FileText, Info } from 'lucide-react'
-import { usePlatform } from '../hooks/usePlatform'
+import { Platform, usePlatform } from '../hooks/usePlatform'
 import { GitHubIcon } from './Icons'
+
+type PlatformKey = 'macos' | 'windows' | 'linux'
+
+interface HeroProps {
+	selectedPlatform: Platform | null
+	onPlatformChange: (platform: Platform | null) => void
+}
+
+const platformLabels: Record<PlatformKey, string> = {
+	macos: 'macOS',
+	windows: 'Windows',
+	linux: 'Linux',
+}
+
+const platformDownloadUrls: Record<PlatformKey, string> = {
+	macos: 'https://github.com/zimablue-io/document-localizer/releases/latest',
+	windows: 'https://github.com/zimablue-io/document-localizer/releases/latest',
+	linux: 'https://github.com/zimablue-io/document-localizer/releases/latest',
+}
 
 const originalText = 'The color of the car is parked in the garage. Mom made her favorite soccer jersey.'
 const localizedText = 'The colour of the car is parked in the garage. Mum made her favourite football jersey.'
@@ -41,9 +60,11 @@ function LocalizedText() {
 	)
 }
 
-export default function Hero() {
-	const platform = usePlatform()
-	const isMac = platform === 'macos'
+export default function Hero({ selectedPlatform, onPlatformChange }: HeroProps) {
+	const detectedPlatform = usePlatform()
+	const platform =
+		selectedPlatform ?? ((detectedPlatform !== 'unsupported' ? detectedPlatform : 'macos') as PlatformKey)
+	const isSupported = platform !== 'unsupported'
 
 	return (
 		<section className="min-h-[calc(100vh-80px)] flex items-center px-6 md:px-12 py-16 relative overflow-hidden">
@@ -69,14 +90,32 @@ export default function Hero() {
 						computer.
 					</p>
 
-					<div className="flex flex-col sm:flex-row gap-3 pt-4">
-						{isMac ? (
+					<div className="flex flex-col gap-3 pt-4">
+						{/* Platform Tabs */}
+						<div className="flex border-b border-border">
+							{(Object.keys(platformLabels) as PlatformKey[]).map((p) => (
+								<button
+									key={p}
+									onClick={() => onPlatformChange(p)}
+									className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+										platform === p
+											? 'border-primary text-primary'
+											: 'border-transparent text-muted-foreground hover:text-foreground'
+									}`}
+								>
+									{platformLabels[p]}
+								</button>
+							))}
+						</div>
+
+						{/* Download Button */}
+						{isSupported ? (
 							<a
-								href="https://github.com/zimablue-io/document-localizer/releases"
+								href={platformDownloadUrls[platform]}
 								className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all hover:scale-105 shadow-lg shadow-primary/25 animate-glow"
 							>
 								<Download className="w-5 h-5" />
-								Download for macOS
+								Download for {platformLabels[platform]}
 							</a>
 						) : (
 							<button
@@ -84,7 +123,7 @@ export default function Hero() {
 								className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-muted text-muted-foreground rounded-lg font-medium cursor-not-allowed opacity-60"
 							>
 								<Info className="w-5 h-5" />
-								Currently available for macOS only
+								Currently only macOS, Windows, and Linux are supported
 							</button>
 						)}
 						<a

@@ -1,4 +1,12 @@
 import { useState } from 'react'
+import { Platform, usePlatform } from '../hooks/usePlatform'
+
+type ProviderStep = {
+	title: string
+	command?: string | null
+	description: string
+	platforms?: Platform[]
+}
 
 interface Provider {
 	id: string
@@ -6,7 +14,7 @@ interface Provider {
 	installUrl: string
 	defaultPort: string
 	defaultApiUrl: string
-	steps: { title: string; command?: string; description: string }[]
+	steps: ProviderStep[]
 }
 
 const providers: Provider[] = [
@@ -21,6 +29,13 @@ const providers: Provider[] = [
 				title: 'Install Ollama',
 				command: 'brew install ollama',
 				description: 'Or download from ollama.ai/download',
+				platforms: ['macos'],
+			},
+			{
+				title: 'Install Ollama',
+				command: null,
+				description: 'Download from ollama.ai/download - available for macOS, Windows, and Linux.',
+				platforms: ['windows', 'linux'],
 			},
 			{
 				title: 'Start the server',
@@ -78,6 +93,14 @@ const providers: Provider[] = [
 				title: 'Install llama.cpp',
 				command: 'brew install llama.cpp',
 				description: 'Builds the server binary. Requires CMake and build tools.',
+				platforms: ['macos'],
+			},
+			{
+				title: 'Install llama.cpp',
+				command: null,
+				description:
+					'Follow build instructions at github.com/ggerganov/llama.cpp. Requires CMake and build tools.',
+				platforms: ['windows', 'linux'],
 			},
 			{
 				title: 'Download a model',
@@ -106,13 +129,12 @@ function TerminalBlock({ command }: { command: string }) {
 	)
 }
 
-function StepItem({
-	step,
-	isLast,
-}: {
-	step: { title: string; command?: string | null; description: string }
-	isLast: boolean
-}) {
+function StepItem({ step, isLast, platform }: { step: ProviderStep; isLast: boolean; platform: Platform }) {
+	// Skip steps that don't apply to current platform
+	if (step.platforms && !step.platforms.includes(platform)) {
+		return null
+	}
+
 	return (
 		<div className="flex gap-4">
 			<div className="flex flex-col items-center">
@@ -130,9 +152,16 @@ function StepItem({
 	)
 }
 
-export default function SetupGuide() {
+interface SetupGuideProps {
+	selectedPlatform: Platform | null
+}
+
+export default function SetupGuide({ selectedPlatform }: SetupGuideProps) {
 	const [activeTab, setActiveTab] = useState('ollama')
+	const detectedPlatform = usePlatform()
+	const platform = selectedPlatform ?? detectedPlatform
 	const activeProvider = providers.find((p) => p.id === activeTab)!
+	const visibleSteps = activeProvider.steps.filter((step) => !step.platforms || step.platforms.includes(platform))
 
 	return (
 		<section className="py-20 px-6 border-t border-border">
@@ -144,12 +173,12 @@ export default function SetupGuide() {
 				</p>
 
 				{/* Horizontal Tab List */}
-				<div className="flex border-b border-border mb-8">
+				<div className="flex border-b border-border mb-8 overflow-x-auto">
 					{providers.map((provider) => (
 						<button
 							key={provider.id}
 							onClick={() => setActiveTab(provider.id)}
-							className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+							className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
 								activeTab === provider.id
 									? 'border-primary text-primary'
 									: 'border-transparent text-muted-foreground hover:text-foreground'
@@ -172,11 +201,12 @@ export default function SetupGuide() {
 						</div>
 
 						<div>
-							{activeProvider.steps.map((step, index) => (
+							{visibleSteps.map((step, index) => (
 								<StepItem
 									key={step.title}
 									step={step}
-									isLast={index === activeProvider.steps.length - 1}
+									isLast={index === visibleSteps.length - 1}
+									platform={platform}
 								/>
 							))}
 						</div>
@@ -229,7 +259,7 @@ export default function SetupGuide() {
 									d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
 								/>
 							</svg>
-							<span>macOS 12+</span>
+							<span>macOS, Windows, or Linux</span>
 						</div>
 						<div className="flex items-center gap-2">
 							<svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
