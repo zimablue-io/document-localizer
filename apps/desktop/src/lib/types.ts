@@ -70,7 +70,7 @@ export interface ProcessingOutput {
 	path: string
 	sourceLocale: string
 	targetLocale: string
-	status: 'parsing' | 'localizing' | 'paused' | 'review' | 'approved' | 'rejected' | 'exported' | 'error'
+	status: 'parsing' | 'localizing' | 'review' | 'approved' | 'rejected' | 'exported' | 'error'
 	markdown?: string
 	localizedText?: string
 	progress?: { current: number; total: number; phase?: string }

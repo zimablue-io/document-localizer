@@ -28,10 +28,10 @@ export interface ProcessingOptions {
 	customPrompt?: string
 	sourceLocale: string
 	targetLocale: string
+	shouldContinue?: () => boolean
 	onStatusChange: (status: ProcessingOutput['status'], progress?: { current: number; total: number }) => void
 	onProgress: (current: number, total: number) => void
 	onIntermediateWrite: (text: string) => Promise<void>
-	resumeFromParagraph?: number
 }
 
 /**
@@ -137,10 +137,10 @@ export async function processDocument(options: ProcessingOptions): Promise<Proce
 		customPrompt,
 		sourceLocale,
 		targetLocale,
+		shouldContinue,
 		onStatusChange,
 		onProgress,
 		onIntermediateWrite,
-		resumeFromParagraph,
 	} = options
 
 	onStatusChange('parsing')
@@ -157,16 +157,20 @@ export async function processDocument(options: ProcessingOptions): Promise<Proce
 	// Split markdown into paragraphs - one paragraph per API call
 	const paragraphs = markdown.split(/\n\n+/).filter((p) => p.trim())
 
+	onStatusChange('localizing', { current: 0, total: paragraphs.length })
+
 	// Initialize output file
 	await window.electron.writeTextFile(outputPath, '')
 
-	onStatusChange('localizing', { current: 0, total: paragraphs.length })
-
 	const localizedParagraphs: string[] = []
-	const startIndex = resumeFromParagraph ?? 0
 
 	// Process in parallel batches
-	for (let i = startIndex; i < paragraphs.length; i += PROCESSING_CONCURRENCY) {
+	for (let i = 0; i < paragraphs.length; i += PROCESSING_CONCURRENCY) {
+		// Check if stopped between batches
+		if (shouldContinue && !shouldContinue()) {
+			return { success: false }
+		}
+
 		const batch = paragraphs.slice(i, i + PROCESSING_CONCURRENCY)
 
 		const results = await Promise.all(
@@ -187,7 +191,7 @@ export async function processDocument(options: ProcessingOptions): Promise<Proce
 		onProgress(progress, paragraphs.length)
 
 		// Write intermediate results periodically
-		if (localizedParagraphs.length - (resumeFromParagraph ?? 0) >= DISK_WRITE_INTERVAL) {
+		if (localizedParagraphs.length >= DISK_WRITE_INTERVAL) {
 			await onIntermediateWrite(localizedParagraphs.join('\n\n'))
 		}
 	}

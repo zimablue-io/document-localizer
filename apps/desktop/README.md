@@ -14,7 +14,7 @@ Cross-platform desktop app that localizes documents between American and British
 - **Export**: Save localized documents as Markdown or PDF
 - **Three-Tab System**:
   - **Uploaded**: Source library (permanent files, never modified)
-  - **Tasks**: Active processing (parsing, localizing, paused, review)
+  - **Tasks**: Active processing (parsing, localizing, review)
   - **Processed**: Completed outputs (approved, rejected, exported)
 
 ## Tech Stack

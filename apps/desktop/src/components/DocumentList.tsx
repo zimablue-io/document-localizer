@@ -1,6 +1,6 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
-import { ChevronDown, Eye, FileText, FileType, Pause, Play, RotateCcw, Square, Zap } from 'lucide-react'
+import { ChevronDown, Eye, FileText, FileType, Square, Zap } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LocaleSelect, STATUS_COLORS, STATUS_LABELS, StatusIcon } from './document-helpers'
 
@@ -39,8 +39,6 @@ interface DocumentListProps {
 	onRemoveTask: (id: string) => void
 	onRemoveProcessed: (id: string) => void
 	onStop?: (id: string) => void
-	onPause?: (id: string) => void
-	onResume?: (id: string) => void
 	onFilesAdded?: (paths: string[]) => void
 	onExport?: (id: string, format: 'md' | 'pdf') => void
 	onLocaleChange?: (id: string, source?: string, target?: string) => void
@@ -50,10 +48,10 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
 	const percent = total > 0 ? Math.round((current / total) * 100) : 0
 	return (
 		<div className="flex items-center gap-3">
-			<div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden max-w-[200px]">
+			<div className="w-[200px] h-2 bg-secondary rounded-full overflow-hidden">
 				<div className="h-full bg-primary transition-all duration-300" style={{ width: `${percent}%` }} />
 			</div>
-			<span className="text-sm text-primary font-medium tabular-nums">
+			<span className="text-sm text-primary font-medium tabular-nums w-16 text-right">
 				{current}/{total}
 			</span>
 		</div>
@@ -71,8 +69,6 @@ export default function DocumentList({
 	onRemoveTask,
 	onRemoveProcessed,
 	onStop,
-	onPause,
-	onResume,
 	onFilesAdded,
 	onExport,
 	onLocaleChange,
@@ -207,10 +203,12 @@ export default function DocumentList({
 					<table className="w-full">
 						<thead className="sticky top-0 bg-background z-10">
 							<tr className="border-b border-border text-left">
-								<th className="pb-3 pl-4 text-sm font-semibold text-muted-foreground">Document</th>
-								<th className="pb-3 px-2 text-sm font-semibold text-muted-foreground">Source</th>
-								<th className="pb-3 px-2 text-sm font-semibold text-muted-foreground">Target</th>
-								<th className="pb-3 pr-4 text-sm font-semibold text-muted-foreground text-right">
+								<th className="pb-3 pl-4 text-sm font-semibold text-muted-foreground w-[40%]">
+									Document
+								</th>
+								<th className="pb-3 px-2 text-sm font-semibold text-muted-foreground w-36">Source</th>
+								<th className="pb-3 px-2 text-sm font-semibold text-muted-foreground w-36">Target</th>
+								<th className="pb-3 pr-4 text-sm font-semibold text-muted-foreground text-right w-36">
 									Actions
 								</th>
 							</tr>
@@ -219,7 +217,7 @@ export default function DocumentList({
 							{sourceDocs.map((doc) => (
 								<tr key={doc.id} className="hover:bg-muted/50 transition-colors">
 									<td className="py-3 pl-4">
-										<p className="font-medium">{doc.name}</p>
+										<p className="font-medium truncate">{doc.name}</p>
 									</td>
 									<td className="py-3 px-2">
 										<LocaleSelect
@@ -232,13 +230,17 @@ export default function DocumentList({
 										<LocaleSelect
 											value={doc.targetLocale || ''}
 											onChange={(v) => v && onLocaleChange?.(doc.id, undefined, v)}
-											locales={locales?.filter((l) => l.code !== doc.sourceLocale)}
+											locales={locales}
+											showSameLocaleWarning={
+												doc.sourceLocale === doc.targetLocale && !!doc.sourceLocale
+											}
 										/>
 									</td>
-									<td className="py-4 pr-4">
+									<td className="py-3 pr-4">
 										<div className="flex items-center justify-end gap-2">
 											<Button
 												variant="secondary"
+												size="sm"
 												onClick={() => onProcess(doc.id)}
 												disabled={!doc.sourceLocale || !doc.targetLocale}
 											>
@@ -300,11 +302,15 @@ export default function DocumentList({
 					<table className="w-full">
 						<thead className="sticky top-0 bg-background z-10">
 							<tr className="border-b border-border text-left">
-								<th className="pb-3 pl-4 text-sm font-semibold text-muted-foreground">Document</th>
-								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground">Locale</th>
-								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground">Status</th>
-								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground w-48">Progress</th>
-								<th className="pb-3 pr-4 text-sm font-semibold text-muted-foreground text-right">
+								<th className="pb-3 pl-4 text-sm font-semibold text-muted-foreground w-[30%]">
+									Document
+								</th>
+								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground w-28">Locale</th>
+								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground w-28">Status</th>
+								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground w-[280px]">
+									Progress
+								</th>
+								<th className="pb-3 pr-4 text-sm font-semibold text-muted-foreground text-right w-48">
 									Actions
 								</th>
 							</tr>
@@ -315,17 +321,21 @@ export default function DocumentList({
 									<td className="py-4 pl-4">
 										<div className="flex items-center gap-3">
 											<StatusIcon status={doc.status} />
-											<div>
-												<p className="font-medium text-base">{doc.name}</p>
-												<p className="text-sm text-muted-foreground">{doc.sourceDocName}</p>
-												{doc.error && doc.status === 'error' && (
-													<p className="text-sm text-red-500 mt-0.5">{doc.error}</p>
-												)}
+											<div className="min-w-0">
+												<p className="font-medium text-base truncate">{doc.name}</p>
+												<p className="text-sm text-muted-foreground truncate">
+													{doc.sourceDocName}
+												</p>
+												<div className="h-5 mt-0.5">
+													{doc.error && doc.status === 'error' && (
+														<p className="text-sm text-red-500 truncate">{doc.error}</p>
+													)}
+												</div>
 											</div>
 										</div>
 									</td>
 									<td className="py-4 px-4">
-										<span className="text-sm">
+										<span className="text-sm whitespace-nowrap">
 											{doc.sourceLocale} → {doc.targetLocale}
 										</span>
 									</td>
@@ -338,7 +348,9 @@ export default function DocumentList({
 										{(doc.status === 'parsing' || doc.status === 'localizing') && doc.progress ? (
 											<ProgressBar current={doc.progress.current} total={doc.progress.total} />
 										) : (
-											<span className="text-muted-foreground">—</span>
+											<div className="h-6 flex items-center">
+												<span className="text-muted-foreground">—</span>
+											</div>
 										)}
 									</td>
 									<td className="py-4 pr-4">
@@ -349,32 +361,10 @@ export default function DocumentList({
 													Stop
 												</Button>
 											)}
-											{doc.status === 'localizing' && onPause && (
-												<Button variant="outline" size="sm" onClick={() => onPause(doc.id)}>
-													<Pause className="w-4 h-4 mr-1" />
-													Pause
-												</Button>
-											)}
-											{doc.status === 'paused' && onResume && (
-												<Button variant="outline" size="sm" onClick={() => onResume(doc.id)}>
-													<Play className="w-4 h-4 mr-1" />
-													Resume
-												</Button>
-											)}
 											{doc.status === 'review' && (
 												<Button onClick={() => onReview(doc.id)}>
 													<Eye className="w-4 h-4 mr-1" />
 													Review
-												</Button>
-											)}
-											{doc.status === 'error' && (
-												<Button
-													variant="destructive"
-													size="sm"
-													onClick={() => onProcess(doc.sourceDocId)}
-												>
-													<RotateCcw className="w-4 h-4 mr-1" />
-													Retry
 												</Button>
 											)}
 											<Button
@@ -432,10 +422,12 @@ export default function DocumentList({
 					<table className="w-full">
 						<thead className="sticky top-0 bg-background z-10">
 							<tr className="border-b border-border text-left">
-								<th className="pb-3 pl-4 text-sm font-semibold text-muted-foreground">Document</th>
-								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground">Locale</th>
-								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground">Status</th>
-								<th className="pb-3 pr-4 text-sm font-semibold text-muted-foreground text-right">
+								<th className="pb-3 pl-4 text-sm font-semibold text-muted-foreground w-[40%]">
+									Document
+								</th>
+								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground w-28">Locale</th>
+								<th className="pb-3 px-4 text-sm font-semibold text-muted-foreground w-28">Status</th>
+								<th className="pb-3 pr-4 text-sm font-semibold text-muted-foreground text-right w-40">
 									Actions
 								</th>
 							</tr>
@@ -446,14 +438,16 @@ export default function DocumentList({
 									<td className="py-4 pl-4">
 										<div className="flex items-center gap-3">
 											<StatusIcon status={doc.status} />
-											<div>
-												<p className="font-medium text-base">{doc.name}</p>
-												<p className="text-sm text-muted-foreground">{doc.sourceDocName}</p>
+											<div className="min-w-0">
+												<p className="font-medium text-base truncate">{doc.name}</p>
+												<p className="text-sm text-muted-foreground truncate">
+													{doc.sourceDocName}
+												</p>
 											</div>
 										</div>
 									</td>
 									<td className="py-4 px-4">
-										<span className="text-sm">
+										<span className="text-sm whitespace-nowrap">
 											{doc.sourceLocale} → {doc.targetLocale}
 										</span>
 									</td>
@@ -468,6 +462,7 @@ export default function DocumentList({
 												<div className="relative" ref={exportMenuRef}>
 													<Button
 														variant="default"
+														size="sm"
 														onClick={() =>
 															setShowExportMenu(showExportMenu === doc.id ? null : doc.id)
 														}

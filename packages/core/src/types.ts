@@ -31,7 +31,7 @@ export interface DiffLine {
 }
 
 // Document processing types
-export type DocumentStatus = 'idle' | 'parsing' | 'localizing' | 'paused' | 'review' | 'approved' | 'exported' | 'error'
+export type DocumentStatus = 'idle' | 'parsing' | 'localizing' | 'review' | 'approved' | 'exported' | 'error'
 
 // Change review types
 export type ChangeStatus = 'pending' | 'approved' | 'rejected' | 'ignored'

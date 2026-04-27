@@ -51,6 +51,18 @@ OUTPUT FORMAT:
 {text}
 ---END TEXT---`
 
+/**
+ * Prompt for AI-based locale detection (source mismatch detection only).
+ * Returns just the locale code (e.g., en-US, fr-FR, zh-CN).
+ */
+export const LOCALE_DETECTION_PROMPT = `Detect the locale of the following text. Reply with ONLY the locale code (e.g., en-US, fr-FR, zh-CN). If unsure, reply with "unknown".
+
+---BEGIN TEXT---
+{text}
+---END TEXT---
+
+Locale code:`
+
 export function buildPrompt(
 	template: string,
 	params: { sourceLocale?: string; targetLocale?: string; text: string }

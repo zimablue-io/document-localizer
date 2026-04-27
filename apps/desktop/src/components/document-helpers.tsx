@@ -1,6 +1,6 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@doclocalizer/ui'
-import { CheckCircle2, Clock, FileText, Loader2, Pause, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Clock, FileText, Loader2, XCircle } from 'lucide-react'
 
 type ExtendedStatus = DocumentState['status'] | 'rejected'
 
@@ -9,22 +9,36 @@ interface LocaleSelectProps {
 	onChange: (value: string | null) => void
 	locales?: { code: string; name: string }[]
 	disabled?: boolean
+	showSameLocaleWarning?: boolean
 }
 
-export function LocaleSelect({ value, onChange, locales, disabled }: LocaleSelectProps) {
+export function LocaleSelect({ value, onChange, locales, disabled, showSameLocaleWarning }: LocaleSelectProps) {
 	return (
-		<Select value={value} onValueChange={onChange} disabled={disabled}>
-			<SelectTrigger className="h-7 w-28">
-				<SelectValue placeholder="Select..." />
-			</SelectTrigger>
-			<SelectContent>
-				{locales?.map((l) => (
-					<SelectItem key={l.code} value={l.code}>
-						{l.code}
-					</SelectItem>
-				))}
-			</SelectContent>
-		</Select>
+		<div className="flex items-center gap-1">
+			<Select value={value} onValueChange={onChange} disabled={disabled}>
+				<SelectTrigger className="h-7 w-28">
+					<SelectValue placeholder="Select..." />
+				</SelectTrigger>
+				<SelectContent>
+					{locales?.map((l) => (
+						<SelectItem key={l.code} value={l.code}>
+							{l.code}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+			<div className="w-5 h-5 flex items-center justify-center">
+				{showSameLocaleWarning ? (
+					<div className="group relative flex items-center">
+						<AlertTriangle className="w-4 h-4 text-orange-500" />
+						<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10 w-48 p-2 bg-popover border border-border rounded-lg shadow-lg text-xs text-popover-foreground">
+							Same locale selected - ensure you have a custom prompt configured to define the
+							transformation
+						</div>
+					</div>
+				) : null}
+			</div>
+		</div>
 	)
 }
 
@@ -35,8 +49,6 @@ export function StatusIcon({ status }: { status: ExtendedStatus }) {
 		case 'parsing':
 		case 'localizing':
 			return <Loader2 className="w-5 h-5 text-primary animate-spin" />
-		case 'paused':
-			return <Pause className="w-5 h-5 text-orange-500" />
 		case 'review':
 			return <FileText className="w-5 h-5 text-yellow-500" />
 		case 'approved':
@@ -53,7 +65,6 @@ export const STATUS_LABELS: Record<ExtendedStatus, string> = {
 	idle: 'Ready to process',
 	parsing: 'Extracting text...',
 	localizing: 'Localizing...',
-	paused: 'Paused',
 	review: 'Needs review',
 	approved: 'Ready to export',
 	rejected: 'Rejected',
@@ -65,7 +76,6 @@ export const STATUS_COLORS: Record<ExtendedStatus, string> = {
 	idle: 'text-muted-foreground',
 	parsing: 'text-muted-foreground',
 	localizing: 'text-muted-foreground',
-	paused: 'text-orange-500',
 	review: 'text-yellow-500',
 	approved: 'text-green-500',
 	rejected: 'text-red-500',
@@ -77,7 +87,6 @@ export const ALL_STATUSES: ExtendedStatus[] = [
 	'idle',
 	'parsing',
 	'localizing',
-	'paused',
 	'review',
 	'approved',
 	'rejected',

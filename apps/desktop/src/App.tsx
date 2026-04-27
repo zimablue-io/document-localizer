@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Button } from '@doclocalizer/ui'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import DiffView from './components/DiffView'
 import DocumentList from './components/DocumentList'
@@ -9,7 +10,8 @@ import SettingsModal from './components/SettingsModal'
 import { useDocuments } from './hooks/useDocuments'
 import { contentToPdf, ExportFormat, getFileExtension } from './lib/export'
 import { ALL_LOCALES } from './lib/locales'
-import { createProcessingOutput, processDocument } from './lib/processing'
+import { createProcessingOutput, extractMarkdown, processDocument } from './lib/processing'
+import { LOCALE_DETECTION_PROMPT } from './lib/prompts'
 import { loadSettings, saveSettings } from './lib/settings'
 import type { HistoryEntry, Settings } from './lib/types'
 import { formatError } from './lib/utils'
@@ -36,7 +38,13 @@ export default function App() {
 	const [showSettings, setShowSettings] = useState(false)
 	const [showHistory, setShowHistory] = useState(false)
 	const [connectionRefreshKey, setConnectionRefreshKey] = useState(0)
-	const [pausedChunkIndex, setPausedChunkIndex] = useState<Record<string, number>>({})
+	const [pendingLocaleCheck, setPendingLocaleCheck] = useState<{
+		sourceDocId: string
+		detectedLocale: string
+		sourceLocale: string
+		targetLocale: string
+	} | null>(null)
+	const abortControllers = useRef<Map<string, AbortController>>(new Map())
 
 	// Load settings on mount
 	useEffect(() => {
@@ -82,6 +90,38 @@ export default function App() {
 				return
 			}
 
+			// Create abort controller EARLY so stop can work during locale detection
+			const abortController = new AbortController()
+			abortControllers.current.set(sourceDocId, abortController)
+
+			// Detect locale before processing
+			const markdown = await extractMarkdown(sourceDoc)
+			const sampleText = markdown.slice(0, 1000) // Sample first 1000 chars
+
+			// Use AI to detect locale
+			const prompt = LOCALE_DETECTION_PROMPT.replace('{text}', sampleText)
+			const result = await window.electron.generateAI({
+				url: `${settings.apiUrl}/chat/completions`,
+				body: {
+					model: activeModelName,
+					messages: [{ role: 'user', content: prompt }],
+					temperature: 0.2,
+					max_tokens: 50,
+					stream: false,
+				},
+			})
+
+			const detectedLocale = result.content?.trim() || ''
+
+			// If detected locale differs from selected source locale, prompt confirmation
+			if (detectedLocale && detectedLocale !== 'unknown' && detectedLocale !== sourceLocale) {
+				setPendingLocaleCheck({ sourceDocId, detectedLocale, sourceLocale, targetLocale })
+				return
+			}
+
+			// Proceed with processing
+			if (!settings) return
+
 			const newOutput = createProcessingOutput(sourceDoc, targetLocale)
 			setTasksDocs((prev) => [...prev, newOutput])
 			toast.info(`Processing ${sourceDoc.name} to ${targetLocale}...`)
@@ -109,6 +149,7 @@ export default function App() {
 					customPrompt: settings.customPrompt,
 					sourceLocale,
 					targetLocale,
+					shouldContinue: () => !abortController.signal.aborted,
 					onStatusChange: (status, progress) => {
 						setTasksDocs((prev) =>
 							prev.map((d) => (d.id === newOutput.id ? { ...d, status, progress } : d))
@@ -124,8 +165,12 @@ export default function App() {
 					onIntermediateWrite: async (text) => {
 						await window.electron.writeTextFile(newOutput.path, text)
 					},
-					resumeFromParagraph: pausedChunkIndex[newOutput.id],
 				})
+
+				// If cancelled/stopped, don't update UI or show success
+				if (!result.success) {
+					return
+				}
 
 				setTasksDocs((prev) =>
 					prev.map((d) =>
@@ -150,6 +195,12 @@ export default function App() {
 				}
 			} catch (err) {
 				const cleanError = formatError(err)
+
+				// 'cancelled' means user stopped - task already removed, nothing to do
+				if (cleanError === 'cancelled') {
+					return
+				}
+
 				setTasksDocs((prev) =>
 					prev.map((d) =>
 						d.id === newOutput.id ? { ...d, status: 'error', error: cleanError, progress: undefined } : d
@@ -165,52 +216,144 @@ export default function App() {
 				}
 			}
 		},
-		[sourceDocs, settings, activeModelName, pausedChunkIndex, setTasksDocs, isConfigured]
+		[sourceDocs, settings, isConfigured, activeModelName, setTasksDocs]
 	)
+
+	const handleConfirmLocaleMismatch = useCallback(async () => {
+		if (!pendingLocaleCheck || !settings) return
+		const { sourceDocId, sourceLocale } = pendingLocaleCheck
+		setPendingLocaleCheck(null)
+
+		const sourceDoc = sourceDocs.find((d) => d.id === sourceDocId)
+		if (!sourceDoc) return
+
+		const targetLocale = sourceDoc.targetLocale
+		if (!targetLocale) return
+
+		// Reuse or create abort controller keyed by sourceDocId
+		let abortController = abortControllers.current.get(sourceDocId)
+		if (!abortController) {
+			abortController = new AbortController()
+			abortControllers.current.set(sourceDocId, abortController)
+		}
+
+		const newOutput = createProcessingOutput(sourceDoc, targetLocale)
+		setTasksDocs((prev) => [...prev, newOutput])
+		toast.info(`Processing ${sourceDoc.name} to ${targetLocale}...`)
+
+		let historyEntry: Awaited<ReturnType<typeof window.electron.addHistory>> | undefined
+		try {
+			historyEntry = await window.electron.addHistory({
+				fileName: sourceDoc.name,
+				filePath: sourceDoc.path,
+				sourceLocale,
+				targetLocale,
+				processedAt: new Date().toISOString(),
+				status: 'processed',
+			})
+		} catch (err) {
+			toast.error(`Failed to create history entry: ${formatError(err)}`)
+			return
+		}
+
+		try {
+			const result = await processDocument({
+				sourceDoc,
+				apiUrl: settings.apiUrl,
+				model: activeModelName,
+				customPrompt: settings.customPrompt,
+				sourceLocale,
+				targetLocale,
+				shouldContinue: () => !abortController.signal.aborted,
+				onStatusChange: (status, progress) => {
+					setTasksDocs((prev) => prev.map((d) => (d.id === newOutput.id ? { ...d, status, progress } : d)))
+				},
+				onProgress: (current, total) => {
+					setTasksDocs((prev) =>
+						prev.map((d) =>
+							d.id === newOutput.id ? { ...d, progress: { current, total, phase: 'localizing' } } : d
+						)
+					)
+				},
+				onIntermediateWrite: async (text) => {
+					await window.electron.writeTextFile(newOutput.path, text)
+				},
+			})
+
+			// If cancelled/stopped, don't update UI or show success
+			if (!result.success) {
+				return
+			}
+
+			setTasksDocs((prev) =>
+				prev.map((d) =>
+					d.id === newOutput.id
+						? {
+								...d,
+								status: 'review',
+								localizedText: result.localizedText,
+								markdown: result.markdown,
+								progress: undefined,
+							}
+						: d
+				)
+			)
+			toast.success(`${sourceDoc.name} processed to ${targetLocale}`)
+
+			if (historyEntry?.id) {
+				await window.electron.updateHistory(historyEntry.id, {
+					status: 'review',
+					chunksProcessed: result.paragraphsProcessed,
+				})
+			}
+		} catch (err) {
+			const cleanError = formatError(err)
+
+			// 'cancelled' means user stopped - task already removed, nothing to do
+			if (cleanError === 'cancelled') {
+				return
+			}
+
+			setTasksDocs((prev) =>
+				prev.map((d) =>
+					d.id === newOutput.id ? { ...d, status: 'error', error: cleanError, progress: undefined } : d
+				)
+			)
+			toast.error(`Failed to process ${sourceDoc.name}: ${cleanError}`)
+
+			if (historyEntry?.id) {
+				await window.electron.updateHistory(historyEntry.id, {
+					status: 'error',
+					errorMessage: cleanError,
+				})
+			}
+		}
+	}, [pendingLocaleCheck, sourceDocs, settings, activeModelName, setTasksDocs])
 
 	const handleStop = useCallback(
 		(id: string) => {
+			// Find the task to get its sourceDocId
+			const task = tasksDocs.find((d) => d.id === id)
+			if (!task) {
+				// Task not in list, might be in locale check phase - try to abort by sourceDocId
+				const controller = abortControllers.current.get(id)
+				if (controller) {
+					controller.abort()
+					abortControllers.current.delete(id)
+				}
+				return
+			}
+
+			// Abort using sourceDocId
+			const controller = abortControllers.current.get(task.sourceDocId)
+			if (controller) {
+				controller.abort()
+				abortControllers.current.delete(task.sourceDocId)
+			}
 			setTasksDocs((prev) => prev.filter((d) => d.id !== id))
-			setPausedChunkIndex((prev) => {
-				const next = { ...prev }
-				delete next[id]
-				return next
-			})
 			toast.info('Processing stopped')
 		},
-		[setTasksDocs]
-	)
-
-	const handlePause = useCallback(
-		(id: string) => {
-			const doc = tasksDocs.find((d) => d.id === id)
-			if (!doc || doc.status !== 'localizing') return
-
-			setPausedChunkIndex((prev) => ({
-				...prev,
-				[id]: doc.progress?.current || 0,
-			}))
-			setTasksDocs((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'paused' } : d)))
-			toast.info('Processing paused')
-		},
 		[tasksDocs, setTasksDocs]
-	)
-
-	const handleResume = useCallback(
-		(id: string) => {
-			const resumeFrom = pausedChunkIndex[id] || 0
-			setPausedChunkIndex((prev) => {
-				const next = { ...prev }
-				delete next[id]
-				return next
-			})
-			setTasksDocs((prev) =>
-				prev.map((d) =>
-					d.id === id ? { ...d, status: 'localizing', progress: { ...d.progress!, current: resumeFrom } } : d
-				)
-			)
-		},
-		[pausedChunkIndex, setTasksDocs]
 	)
 
 	const handleSaveSettings = useCallback(async () => {
@@ -226,7 +369,6 @@ export default function App() {
 		if (!output) return
 
 		setTasksDocs((prev) => prev.filter((d) => d.id !== selectedOutputId))
-		processedDocs // trigger re-render if needed
 		toast.success('Document approved')
 
 		const historyEntries = (await window.electron.getHistory()) as HistoryEntry[]
@@ -235,13 +377,7 @@ export default function App() {
 			await window.electron.updateHistory(entry.id, { status: 'approved' })
 			updateHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [
-		selectedOutputId,
-		tasksDocs,
-		updateHistory,
-		processedDocs, // trigger re-render if needed
-		setTasksDocs,
-	])
+	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs])
 
 	const handleReject = useCallback(async () => {
 		const output = tasksDocs.find((d) => d.id === selectedOutputId)
@@ -460,8 +596,6 @@ export default function App() {
 						onRemoveTask={removeTaskDoc}
 						onRemoveProcessed={removeProcessedDoc}
 						onStop={handleStop}
-						onPause={handlePause}
-						onResume={handleResume}
 						onFilesAdded={addSourceDocs}
 						onExport={handleExport}
 						onLocaleChange={(id, source, target) => {
@@ -486,6 +620,63 @@ export default function App() {
 				onClose={() => setShowHistory(false)}
 				onClear={clearHistory}
 			/>
+
+			{/* Locale Mismatch Confirmation Dialog */}
+			{pendingLocaleCheck && (
+				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+					<div className="bg-card rounded-lg border border-border p-6 w-full max-w-md">
+						<h3 className="text-lg font-semibold mb-2">Locale Mismatch Detected</h3>
+						<p className="text-muted-foreground mb-4">
+							Document appears to be in <strong>{pendingLocaleCheck.detectedLocale}</strong>, but you
+							selected <strong>{pendingLocaleCheck.sourceLocale}</strong> as the source locale.
+						</p>
+						{pendingLocaleCheck.detectedLocale === pendingLocaleCheck.sourceLocale && (
+							<div className="flex items-start gap-2 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg mb-4">
+								<svg
+									className="w-5 h-5 text-orange-500 shrink-0 mt-0.5"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+									/>
+								</svg>
+								<div>
+									<p className="text-sm font-medium text-orange-500">Same locale selected</p>
+									<p className="text-xs text-orange-500/80 mt-0.5">
+										Ensure you have a custom prompt configured to define the transformation
+									</p>
+								</div>
+							</div>
+						)}
+						<p className="text-sm text-muted-foreground mb-6">
+							This may result in unnecessary processing if the document is already in your selected
+							locale.
+						</p>
+						<div className="flex justify-end gap-2">
+							<Button
+								variant="outline"
+								onClick={() => {
+									// Abort the in-progress locale detection
+									const controller = abortControllers.current.get(pendingLocaleCheck.sourceDocId)
+									if (controller) {
+										controller.abort()
+										abortControllers.current.delete(pendingLocaleCheck.sourceDocId)
+									}
+									setPendingLocaleCheck(null)
+								}}
+							>
+								Cancel
+							</Button>
+							<Button onClick={handleConfirmLocaleMismatch}>Continue Anyway</Button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }
