@@ -378,7 +378,7 @@ export default function App() {
 			await window.electron.updateHistory(entry.id, { status: 'approved' })
 			updateHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs, setSelectedOutputId])
+	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs])
 
 	const handleReject = useCallback(async () => {
 		const output = tasksDocs.find((d) => d.id === selectedOutputId)
@@ -394,7 +394,7 @@ export default function App() {
 			await window.electron.updateHistory(entry.id, { status: 'rejected' })
 			updateHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs, setSelectedOutputId])
+	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs])
 
 	const handleUpdateLocalizedText = useCallback(
 		(paragraphIndex: number, newText: string) => {
