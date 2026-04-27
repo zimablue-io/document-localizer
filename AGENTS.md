@@ -20,6 +20,7 @@
 | Privacy policy | `docs/PRIVACY.md` |
 | Support info | `docs/SUPPORT.md` |
 | Security policy | `docs/SECURITY.md` |
+| Release process | `docs/RELEASES.md` |
 
 ## Code Locations
 
@@ -80,7 +81,7 @@ The `ALL_LOCALES` array is exported from there - do NOT duplicate.
 ## Version Bumping
 
 The GitHub Actions workflow handles version bumping automatically on push to main.
-Do not manually bump versions.
+Do not manually bump versions. See `docs/RELEASES.md` for full release process details.
 
 ## Getting Unstuck
 
