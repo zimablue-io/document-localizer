@@ -31,6 +31,10 @@ export interface ElectronAPI {
 	saveTasks: (documents: object) => Promise<boolean>
 	loadProcessed: () => Promise<unknown[]>
 	saveProcessed: (documents: object) => Promise<boolean>
+	listPrompts: () => Promise<string[]>
+	readPrompt: (filename: string) => Promise<string | null>
+	writePrompt: (filename: string, content: string) => Promise<boolean>
+	deletePrompt: (filename: string) => Promise<boolean>
 }
 
 declare global {

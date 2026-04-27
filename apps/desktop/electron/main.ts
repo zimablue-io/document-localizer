@@ -434,6 +434,70 @@ ipcMain.handle('tasks:save', async (_event, documents: ProcessedDocument[]) => {
 	}
 })
 
+// Prompt profiles - stored as .md files in prompts/ directory
+const promptsDir = path.join(app.getPath('userData'), 'prompts')
+
+function ensurePromptsDir(): void {
+	if (!fs.existsSync(promptsDir)) {
+		fs.mkdirSync(promptsDir, { recursive: true })
+	}
+}
+
+ipcMain.handle('prompts:list', async () => {
+	try {
+		ensurePromptsDir()
+		const files = fs.readdirSync(promptsDir)
+		return files.filter((f) => f.endsWith('.md')).sort()
+	} catch (e) {
+		log('Error listing prompts:', e)
+		return []
+	}
+})
+
+ipcMain.handle('prompts:read', async (_event, filename: string) => {
+	try {
+		const filePath = path.join(promptsDir, filename)
+		if (!filePath.startsWith(promptsDir)) {
+			return null // Prevent directory traversal
+		}
+		return fs.readFileSync(filePath, 'utf-8')
+	} catch (e) {
+		log('Error reading prompt:', e)
+		return null
+	}
+})
+
+ipcMain.handle('prompts:write', async (_event, filename: string, content: string) => {
+	try {
+		ensurePromptsDir()
+		const filePath = path.join(promptsDir, filename)
+		if (!filePath.startsWith(promptsDir)) {
+			return false // Prevent directory traversal
+		}
+		fs.writeFileSync(filePath, content, 'utf-8')
+		log('Saved prompt:', filename)
+		return true
+	} catch (e) {
+		log('Error writing prompt:', e)
+		return false
+	}
+})
+
+ipcMain.handle('prompts:delete', async (_event, filename: string) => {
+	try {
+		const filePath = path.join(promptsDir, filename)
+		if (!filePath.startsWith(promptsDir)) {
+			return false // Prevent directory traversal
+		}
+		fs.unlinkSync(filePath)
+		log('Deleted prompt:', filename)
+		return true
+	} catch (e) {
+		log('Error deleting prompt:', e)
+		return false
+	}
+})
+
 // AI Generation using Electron's net.fetch (Chromium networking)
 ipcMain.handle(
 	'ai:generate',

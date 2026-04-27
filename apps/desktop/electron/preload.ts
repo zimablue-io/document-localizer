@@ -49,4 +49,12 @@ contextBridge.exposeInMainWorld('electron', {
 	loadProcessed: () => ipcRenderer.invoke('processed:load'),
 
 	saveProcessed: (documents: object) => ipcRenderer.invoke('processed:save', documents),
+
+	listPrompts: () => ipcRenderer.invoke('prompts:list'),
+
+	readPrompt: (filename: string) => ipcRenderer.invoke('prompts:read', filename),
+
+	writePrompt: (filename: string, content: string) => ipcRenderer.invoke('prompts:write', filename, content),
+
+	deletePrompt: (filename: string) => ipcRenderer.invoke('prompts:delete', filename),
 })

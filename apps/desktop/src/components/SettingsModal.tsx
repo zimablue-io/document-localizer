@@ -1,19 +1,22 @@
 import { Button, Input, Label, ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@doclocalizer/ui'
-import { Check, Edit2, Plus, RotateCcw, Trash2, X } from 'lucide-react'
-import { useState } from 'react'
+import { Check, Edit2, Plus, Trash2, X } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { ALL_LOCALES } from '../lib/locales'
 import { DEFAULT_LOCALIZATION_PROMPT } from '../lib/prompts'
 import type { ModelConfig, Settings } from '../lib/types'
+import { PromptCreateForm } from './PromptCreateForm'
+import { PromptEditor } from './PromptEditor'
+import { PromptList } from './PromptList'
 
 interface SettingsModalProps {
 	settings: Settings
+	initialTab?: string
 	onChange: (settings: Settings) => void
-	onSave: () => void
 	onClose: () => void
 }
 
-export default function SettingsModal({ settings, onChange, onSave, onClose }: SettingsModalProps) {
-	const [activeTab, setActiveTab] = useState<string>('locales')
+export default function SettingsModal({ settings, initialTab = 'locales', onChange, onClose }: SettingsModalProps) {
+	const [activeTab, setActiveTab] = useState<string>(initialTab)
 	const [localeSearch, setLocaleSearch] = useState('')
 
 	// Model management state
@@ -21,8 +24,83 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 	const [editingModelId, setEditingModelId] = useState<string | null>(null)
 	const [editModelName, setEditModelName] = useState('')
 
-	const handleResetPrompt = () => {
-		onChange({ ...settings, customPrompt: DEFAULT_LOCALIZATION_PROMPT })
+	// Prompt management state
+	const [promptList, setPromptList] = useState<string[]>([])
+	const [promptContent, setPromptContent] = useState<string>('')
+	const [newPromptName, setNewPromptName] = useState('')
+	const [newPromptContent, setNewPromptContent] = useState(DEFAULT_LOCALIZATION_PROMPT)
+	const [showNewPromptInput, setShowNewPromptInput] = useState(false)
+	const [isEditingPrompt, setIsEditingPrompt] = useState(false)
+
+	const loadPrompts = useCallback(async () => {
+		const prompts = await window.electron.listPrompts()
+		setPromptList(prompts)
+		if (settings.activePromptId) {
+			const content = await window.electron.readPrompt(settings.activePromptId)
+			if (content) setPromptContent(content)
+		}
+	}, [settings.activePromptId])
+
+	useEffect(() => {
+		void loadPrompts()
+	}, [loadPrompts])
+
+	const handleSelectPrompt = async (filename: string | null, edit = false) => {
+		if (!filename) return
+		onChange({ ...settings, activePromptId: filename })
+		setIsEditingPrompt(edit)
+		const content = await window.electron.readPrompt(filename)
+		if (content) setPromptContent(content)
+	}
+
+	const handleSavePrompt = async () => {
+		if (settings.activePromptId) {
+			await window.electron.writePrompt(settings.activePromptId, promptContent)
+		}
+	}
+
+	const handleCreatePrompt = async () => {
+		const filename = `${newPromptName.trim()}.md`
+		if (newPromptName.trim()) {
+			await window.electron.writePrompt(filename, newPromptContent)
+			await loadPrompts()
+			onChange({ ...settings, activePromptId: filename })
+			setPromptContent(newPromptContent)
+			setNewPromptName('')
+			setNewPromptContent(DEFAULT_LOCALIZATION_PROMPT)
+			setShowNewPromptInput(false)
+		}
+	}
+
+	const handleDeletePrompt = async () => {
+		if (!settings.activePromptId) return
+		await window.electron.deletePrompt(settings.activePromptId)
+		await loadPrompts()
+		const remaining = promptList.filter((p) => p !== settings.activePromptId)
+		if (remaining.length > 0) {
+			onChange({ ...settings, activePromptId: remaining[0] })
+			const content = await window.electron.readPrompt(remaining[0])
+			if (content) setPromptContent(content)
+		}
+	}
+
+	const handleResetPrompt = async () => {
+		await window.electron.writePrompt('default.md', DEFAULT_LOCALIZATION_PROMPT)
+		await loadPrompts()
+		if (settings.activePromptId === 'default.md') {
+			setPromptContent(DEFAULT_LOCALIZATION_PROMPT)
+		}
+	}
+
+	const handleRenamePrompt = async (newName: string) => {
+		if (!settings.activePromptId) return
+		const content = await window.electron.readPrompt(settings.activePromptId)
+		if (content) {
+			await window.electron.writePrompt(newName, content)
+			await window.electron.deletePrompt(settings.activePromptId)
+			await loadPrompts()
+			onChange({ ...settings, activePromptId: newName })
+		}
 	}
 
 	const toggleLocale = (code: string) => {
@@ -50,7 +128,7 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 				name: newModelName.trim(),
 			}
 			const updatedModels = [...settings.models, newModel]
-			onChange({ ...settings, models: updatedModels, activeModelId: updatedModels[0].id })
+			onChange({ ...settings, models: updatedModels, activeModelId: newModel.id })
 			setNewModelName('')
 		}
 	}
@@ -87,15 +165,20 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 
 	return (
 		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-			<div className="bg-card rounded-lg border border-border p-6 w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
-				<h2 className="text-lg font-semibold mb-4">Settings</h2>
+			<div className="bg-card rounded-lg border border-border p-6 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+				<div className="flex items-center justify-between mb-4">
+					<h2 className="text-lg font-semibold">Settings</h2>
+					<Button variant="ghost" size="sm" onClick={onClose}>
+						<X className="w-4 h-4" />
+					</Button>
+				</div>
 
 				<Tabs value={activeTab} onValueChange={setActiveTab}>
 					<TabsList variant="line">
 						<TabsTrigger value="locales">Locales</TabsTrigger>
 						<TabsTrigger value="api">API</TabsTrigger>
+						<TabsTrigger value="prompts">Prompts</TabsTrigger>
 						<TabsTrigger value="processing">Processing</TabsTrigger>
-						<TabsTrigger value="prompt">Prompt</TabsTrigger>
 					</TabsList>
 
 					<ScrollArea className="flex-1 min-h-0 mt-4">
@@ -105,14 +188,12 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 								processing.
 							</p>
 
-							{/* Search */}
 							<Input
 								placeholder="Search locales..."
 								value={localeSearch}
 								onChange={(e) => setLocaleSearch(e.target.value)}
 							/>
 
-							{/* Locale list */}
 							<div className="space-y-1 max-h-[300px] overflow-y-auto pr-2">
 								{filteredLocales.map((locale) => {
 									const isEnabled = settings.enabledLocaleCodes.includes(locale.code)
@@ -189,53 +270,80 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 								{settings.models.length > 0 && (
 									<div className="space-y-2">
 										{settings.models.map((model) => (
-											<div key={model.id} className="px-3 py-2 bg-secondary rounded-lg">
+											<div
+												key={model.id}
+												className={`flex items-center h-9 px-0.5 rounded-lg border cursor-pointer transition-colors ${
+													editingModelId === model.id
+														? 'border-input'
+														: model.id === settings.activeModelId
+															? 'bg-primary/10 border-primary'
+															: 'bg-secondary border-transparent hover:border-border'
+												}`}
+											>
 												{editingModelId === model.id ? (
-													<div className="space-y-2">
-														<div className="flex gap-2">
-															<Input
-																value={editModelName}
-																onChange={(e) => setEditModelName(e.target.value)}
-																placeholder="Model name"
-																className="flex-1"
-															/>
-														</div>
-														<div className="flex gap-2 justify-end">
+													<div className="flex items-center gap-2 w-full">
+														<Input
+															value={editModelName}
+															onChange={(e) => setEditModelName(e.target.value)}
+															placeholder="Model name"
+															className="w-full"
+														/>
+
+														<div className="flex items-center gap-x-1">
 															<Button
-																variant="outline"
+																variant="ghost"
 																size="sm"
 																onClick={handleCancelEditModel}
 															>
-																Cancel
+																<X className="w-4 h-4" />
 															</Button>
-															<Button size="sm" onClick={handleSaveEditModel}>
-																<Check className="w-4 h-4 mr-1" />
-																Save
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={handleSaveEditModel}
+															>
+																<Check className="w-4 h-4" />
 															</Button>
 														</div>
 													</div>
 												) : (
-													<div className="flex items-center justify-between">
-														<span className="flex items-center gap-2">
-															{model.name}
+													<div
+														className="flex items-center justify-between w-full"
+														onClick={() =>
+															onChange({ ...settings, activeModelId: model.id })
+														}
+														onKeyDown={(e) => {
+															if (e.key === 'Enter' || e.key === ' ') {
+																e.preventDefault()
+																onChange({ ...settings, activeModelId: model.id })
+															}
+														}}
+													>
+														<span className="truncate px-2">{model.name}</span>
+
+														<div className="flex items-center gap-x-1">
 															{model.id === settings.activeModelId && (
 																<span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">
-																	Active
+																	Selected
 																</span>
 															)}
-														</span>
-														<div className="flex gap-2">
 															<Button
 																variant="ghost"
 																size="sm"
-																onClick={() => handleStartEditModel(model)}
+																onClick={(e) => {
+																	e.stopPropagation()
+																	handleStartEditModel(model)
+																}}
 															>
 																<Edit2 className="w-4 h-4" />
 															</Button>
 															<Button
 																variant="ghost"
 																size="sm"
-																onClick={() => handleRemoveModel(model.id)}
+																onClick={(e) => {
+																	e.stopPropagation()
+																	handleRemoveModel(model.id)
+																}}
 															>
 																<Trash2 className="w-4 h-4" />
 															</Button>
@@ -247,6 +355,49 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 									</div>
 								)}
 							</div>
+						</TabsContent>
+
+						<TabsContent value="prompts" className="space-y-4 pr-4">
+							{showNewPromptInput ? (
+								<PromptCreateForm
+									newPromptName={newPromptName}
+									newPromptContent={newPromptContent}
+									onNameChange={setNewPromptName}
+									onContentChange={setNewPromptContent}
+									onCreate={handleCreatePrompt}
+									onCancel={() => setShowNewPromptInput(false)}
+								/>
+							) : (
+								<div className="space-y-4">
+									<div className="flex items-center justify-between">
+										<h3 className="font-medium">Prompt Profiles</h3>
+										<Button size="sm" onClick={() => setShowNewPromptInput(true)}>
+											<Plus className="w-4 h-4 mr-1" />
+											New
+										</Button>
+									</div>
+
+									<PromptList
+										promptList={promptList}
+										settings={settings}
+										onSelectPrompt={handleSelectPrompt}
+									/>
+
+									{settings.activePromptId && (
+										<PromptEditor
+											settings={settings}
+											promptContent={promptContent}
+											isEditing={isEditingPrompt}
+											onSetEditing={setIsEditingPrompt}
+											onContentChange={setPromptContent}
+											onSave={handleSavePrompt}
+											onDelete={handleDeletePrompt}
+											onRename={handleRenamePrompt}
+											onReset={handleResetPrompt}
+										/>
+									)}
+								</div>
+							)}
 						</TabsContent>
 
 						<TabsContent value="processing" className="space-y-4 pr-4">
@@ -269,40 +420,8 @@ export default function SettingsModal({ settings, onChange, onSave, onClose }: S
 								<p className="text-xs text-muted-foreground">Characters to overlap between chunks</p>
 							</div>
 						</TabsContent>
-
-						<TabsContent value="prompt" className="space-y-2 pr-4">
-							<div className="flex items-center justify-between">
-								<Label htmlFor="prompt">Localization Prompt</Label>
-								<Button variant="link" size="sm" onClick={handleResetPrompt}>
-									<RotateCcw className="w-4 h-4 mr-1" />
-									Reset
-								</Button>
-							</div>
-							<textarea
-								id="prompt"
-								value={settings.customPrompt || DEFAULT_LOCALIZATION_PROMPT}
-								onChange={(e) => onChange({ ...settings, customPrompt: e.target.value })}
-								className="min-h-[16rem] w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 resize-none font-mono"
-								placeholder="Enter your custom prompt..."
-							/>
-							<p className="text-xs text-muted-foreground">
-								Use <code className="bg-secondary px-1 rounded">{'{locale}'}</code> for target locale,{' '}
-								<code className="bg-secondary px-1 rounded">{'{text}'}</code> for content to translate
-							</p>
-						</TabsContent>
 					</ScrollArea>
 				</Tabs>
-
-				<div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
-					<Button variant="outline" onClick={onClose}>
-						<X className="w-4 h-4 mr-1" />
-						Cancel
-					</Button>
-					<Button onClick={onSave}>
-						<Check className="w-4 h-4 mr-1" />
-						Save
-					</Button>
-				</div>
 			</div>
 		</div>
 	)

@@ -12,7 +12,7 @@ import { contentToPdf, ExportFormat, getFileExtension } from './lib/export'
 import { ALL_LOCALES } from './lib/locales'
 import { createProcessingOutput, extractMarkdown, processDocument } from './lib/processing'
 import { LOCALE_DETECTION_PROMPT } from './lib/prompts'
-import { loadSettings, saveSettings } from './lib/settings'
+import { loadSettings } from './lib/settings'
 import type { HistoryEntry, Settings } from './lib/types'
 import { formatError } from './lib/utils'
 
@@ -36,8 +36,11 @@ export default function App() {
 	const [settings, setSettings] = useState<Settings | null>(null)
 	const [selectedOutputId, setSelectedOutputId] = useState<string | null>(null)
 	const [showSettings, setShowSettings] = useState(false)
+	const [settingsTab, setSettingsTab] = useState<string>('locales')
 	const [showHistory, setShowHistory] = useState(false)
-	const [connectionRefreshKey, setConnectionRefreshKey] = useState(0)
+	const [connectionRefreshKey] = useState(0)
+	const [activePrompt, setActivePrompt] = useState<string>('')
+	const [promptList, setPromptList] = useState<string[]>([])
 	const [pendingLocaleCheck, setPendingLocaleCheck] = useState<{
 		sourceDocId: string
 		detectedLocale: string
@@ -50,6 +53,20 @@ export default function App() {
 	useEffect(() => {
 		void loadSettings().then(setSettings)
 	}, [])
+
+	// Load prompt list on mount
+	useEffect(() => {
+		window.electron.listPrompts().then(setPromptList)
+	}, [])
+
+	// Load active prompt when settings or activePromptId changes
+	useEffect(() => {
+		if (settings?.activePromptId) {
+			window.electron.readPrompt(settings.activePromptId).then((content) => {
+				if (content) setActivePrompt(content)
+			})
+		}
+	}, [settings?.activePromptId])
 
 	const isConfigured = settings?.apiUrl && settings?.models?.length
 
@@ -146,7 +163,7 @@ export default function App() {
 					sourceDoc,
 					apiUrl: settings.apiUrl,
 					model: activeModelName,
-					customPrompt: settings.customPrompt,
+					customPrompt: activePrompt,
 					sourceLocale,
 					targetLocale,
 					shouldContinue: () => !abortController.signal.aborted,
@@ -216,7 +233,7 @@ export default function App() {
 				}
 			}
 		},
-		[sourceDocs, settings, isConfigured, activeModelName, setTasksDocs]
+		[sourceDocs, settings, isConfigured, activeModelName, activePrompt, setTasksDocs]
 	)
 
 	const handleConfirmLocaleMismatch = useCallback(async () => {
@@ -261,7 +278,7 @@ export default function App() {
 				sourceDoc,
 				apiUrl: settings.apiUrl,
 				model: activeModelName,
-				customPrompt: settings.customPrompt,
+				customPrompt: activePrompt,
 				sourceLocale,
 				targetLocale,
 				shouldContinue: () => !abortController.signal.aborted,
@@ -328,7 +345,7 @@ export default function App() {
 				})
 			}
 		}
-	}, [pendingLocaleCheck, sourceDocs, settings, activeModelName, setTasksDocs])
+	}, [pendingLocaleCheck, sourceDocs, settings, activeModelName, activePrompt, setTasksDocs])
 
 	const handleStop = useCallback(
 		(id: string) => {
@@ -355,14 +372,6 @@ export default function App() {
 		},
 		[tasksDocs, setTasksDocs]
 	)
-
-	const handleSaveSettings = useCallback(async () => {
-		if (!settings) return
-		await saveSettings(settings)
-		setShowSettings(false)
-		setConnectionRefreshKey((prev) => prev + 1)
-		toast.success('Settings saved')
-	}, [settings])
 
 	const handleApprove = useCallback(async () => {
 		const output = tasksDocs.find((d) => d.id === selectedOutputId)
@@ -552,13 +561,22 @@ export default function App() {
 			<Header
 				models={settings?.models}
 				activeModelId={settings?.activeModelId}
+				promptList={promptList}
+				activePromptId={settings?.activePromptId}
 				apiUrl={settings?.apiUrl}
 				isConfigured={!!isConfigured}
 				connectionRefreshKey={connectionRefreshKey}
 				onSelectFiles={handleSelectFiles}
 				onOpenSettings={() => setShowSettings(true)}
+				onOpenSettingsTab={(tab) => {
+					setSettingsTab(tab)
+					setShowSettings(true)
+				}}
 				onOpenHistory={() => setShowHistory(true)}
 				onModelChange={(modelId) => setSettings((prev) => (prev ? { ...prev, activeModelId: modelId } : null))}
+				onPromptChange={(promptId) =>
+					setSettings((prev) => (prev ? { ...prev, activePromptId: promptId } : null))
+				}
 			/>
 
 			<main className="flex-1 p-6 overflow-auto">
@@ -610,8 +628,8 @@ export default function App() {
 			{showSettings && settings && (
 				<SettingsModal
 					settings={settings}
+					initialTab={settingsTab}
 					onChange={setSettings}
-					onSave={handleSaveSettings}
 					onClose={() => setShowSettings(false)}
 				/>
 			)}

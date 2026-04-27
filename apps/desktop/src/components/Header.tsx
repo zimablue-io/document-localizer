@@ -44,40 +44,52 @@ interface ModelConfig {
 interface HeaderProps {
 	models?: ModelConfig[]
 	activeModelId?: string
+	promptList?: string[]
+	activePromptId?: string
 	apiUrl?: string
 	isConfigured: boolean
 	connectionRefreshKey?: number
 	onSelectFiles: () => void
 	onOpenSettings: () => void
+	onOpenSettingsTab?: (tab: string) => void
 	onOpenHistory: () => void
 	onModelChange?: (modelId: string) => void
+	onPromptChange?: (promptId: string) => void
 }
 
 export default function Header({
 	models,
 	activeModelId,
+	promptList,
+	activePromptId,
 	apiUrl,
 	isConfigured,
 	connectionRefreshKey,
 	onSelectFiles,
 	onOpenSettings,
+	onOpenSettingsTab,
 	onOpenHistory,
 	onModelChange,
+	onPromptChange,
 }: HeaderProps) {
 	const processingCount = 0
-	const [showDropdown, setShowDropdown] = useState(false)
-	const dropdownRef = useRef<HTMLDivElement>(null)
+	const [showModelDropdown, setShowModelDropdown] = useState(false)
+	const [showPromptDropdown, setShowPromptDropdown] = useState(false)
+	const modelDropdownRef = useRef<HTMLDivElement>(null)
+	const promptDropdownRef = useRef<HTMLDivElement>(null)
 
 	const { isOnline, isChecking, retry: handleRetryConnection } = useConnectionCheck(apiUrl, connectionRefreshKey)
 
 	const activeModel = models?.find((m) => m.id === activeModelId) || models?.[0]
-	const shortModel = `${activeModel?.name?.split(':')[0]}:${activeModel?.name?.split(':')[1]}` || ''
 
-	// Close dropdown when clicking outside
+	// Close model dropdown when clicking outside
 	useEffect(() => {
 		function handleClickOutside(event: MouseEvent) {
-			if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-				setShowDropdown(false)
+			if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target as Node)) {
+				setShowModelDropdown(false)
+			}
+			if (promptDropdownRef.current && !promptDropdownRef.current.contains(event.target as Node)) {
+				setShowPromptDropdown(false)
 			}
 		}
 		document.addEventListener('mousedown', handleClickOutside)
@@ -88,20 +100,22 @@ export default function Header({
 		<header className="border-b border-border px-6 py-4 flex items-center justify-between">
 			<div className="flex items-center gap-4">
 				<h1 className="text-xl font-semibold">Document Localizer</h1>
+
+				{/* Model Dropdown */}
 				{activeModel && (
-					<div className="relative" ref={dropdownRef}>
+					<div className="relative" ref={modelDropdownRef}>
 						<div
 							role="button"
 							tabIndex={0}
 							onClick={() => {
 								if (processingCount === 0) {
-									setShowDropdown(!showDropdown)
+									setShowModelDropdown(!showModelDropdown)
 								}
 							}}
 							onKeyDown={(e) => {
 								if (e.key === 'Enter' || e.key === ' ') {
 									if (processingCount === 0) {
-										setShowDropdown(!showDropdown)
+										setShowModelDropdown(!showModelDropdown)
 									}
 								}
 							}}
@@ -110,7 +124,7 @@ export default function Header({
 							}`}
 							title={`Model: ${activeModel.name}\nAPI: ${apiUrl}\n${processingCount > 0 ? 'Processing documents...' : 'Click to change model'}`}
 						>
-							<span>{shortModel || activeModel.name}</span>
+							<span>{activeModel?.name}</span>
 							<div className="relative group">
 								<span
 									className={`block w-2.5 h-2.5 rounded-full transition-opacity ${
@@ -137,7 +151,7 @@ export default function Header({
 							</div>
 							<ChevronDown className="w-3 h-3" />
 						</div>
-						{showDropdown && models && models.length > 0 && (
+						{showModelDropdown && models && models.length > 0 && (
 							<div className="absolute left-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-xl py-1 min-w-[180px]">
 								<div className="px-3 py-1.5 text-xs text-muted-foreground border-b border-border">
 									Select Model
@@ -151,7 +165,7 @@ export default function Header({
 										}`}
 										onClick={() => {
 											onModelChange?.(model.id)
-											setShowDropdown(false)
+											setShowModelDropdown(false)
 										}}
 									>
 										<span className="truncate">{model.name}</span>
@@ -178,11 +192,84 @@ export default function Header({
 										type="button"
 										className="w-full px-3 py-2 text-left text-sm hover:bg-muted text-muted-foreground"
 										onClick={() => {
-											setShowDropdown(false)
-											onOpenSettings()
+											setShowModelDropdown(false)
+											onOpenSettingsTab?.('api')
 										}}
 									>
 										Manage Models...
+									</button>
+								</div>
+							</div>
+						)}
+					</div>
+				)}
+
+				{/* Prompt Profile Dropdown */}
+				{activePromptId && (
+					<div className="relative" ref={promptDropdownRef}>
+						<div
+							role="button"
+							tabIndex={0}
+							onClick={() => {
+								setShowPromptDropdown(!showPromptDropdown)
+							}}
+							onKeyDown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									setShowPromptDropdown(!showPromptDropdown)
+								}
+							}}
+							className="flex items-center gap-1.5 px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors cursor-pointer"
+							title={`Prompt: ${activePromptId}\nClick to change prompt`}
+						>
+							<span className="truncate max-w-[120px]">{activePromptId}</span>
+							<ChevronDown className="w-3 h-3" />
+						</div>
+						{showPromptDropdown && promptList && promptList.length > 0 && (
+							<div className="absolute left-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-xl py-1 min-w-[180px]">
+								<div className="px-3 py-1.5 text-xs text-muted-foreground border-b border-border">
+									Select Prompt
+								</div>
+								{promptList.map((filename) => (
+									<button
+										type="button"
+										key={filename}
+										className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+											filename === activePromptId ? 'bg-primary/10 text-primary' : ''
+										}`}
+										onClick={() => {
+											onPromptChange?.(filename)
+											setShowPromptDropdown(false)
+										}}
+									>
+										<span className="truncate">{filename}</span>
+										{filename === activePromptId && (
+											<svg
+												className="w-4 h-4 text-primary shrink-0"
+												fill="none"
+												viewBox="0 0 24 24"
+												stroke="currentColor"
+												aria-label="Selected"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													strokeWidth={2}
+													d="M5 13l4 4L19 7"
+												/>
+											</svg>
+										)}
+									</button>
+								))}
+								<div className="border-t border-border pt-1 mt-1">
+									<button
+										type="button"
+										className="w-full px-3 py-2 text-left text-sm hover:bg-muted text-muted-foreground"
+										onClick={() => {
+											setShowPromptDropdown(false)
+											onOpenSettingsTab?.('prompts')
+										}}
+									>
+										Manage Prompts...
 									</button>
 								</div>
 							</div>

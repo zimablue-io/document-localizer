@@ -25,12 +25,12 @@ export interface Settings {
 	apiUrl: string
 	models: ModelConfig[]
 	activeModelId: string
+	activePromptId: string
 	chunkSize: string
 	overlapSize: string
 	sourceLocale: string
 	targetLocale: string
 	enabledLocaleCodes: string[]
-	customPrompt?: string
 }
 
 /**
