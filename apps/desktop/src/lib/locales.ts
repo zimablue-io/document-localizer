@@ -243,3 +243,25 @@ export const ALL_LOCALES: Locale[] = [
 	{ code: 'mt-MT', name: 'Maltese (Malta)' },
 	{ code: 'lb-LU', name: 'Luxembourgish (Luxembourg)' },
 ]
+
+/**
+ * Finds a locale by its BCP 47 code.
+ */
+export function findLocaleByCode(code: string): Locale | undefined {
+	return ALL_LOCALES.find((locale) => locale.code === code)
+}
+
+/**
+ * Finds locales by partial name match (case-insensitive).
+ */
+export function findLocaleByName(name: string): Locale[] {
+	const lowerName = name.toLowerCase()
+	return ALL_LOCALES.filter((locale) => locale.name.toLowerCase().includes(lowerName))
+}
+
+/**
+ * Filters locales by enabled codes, preserving order.
+ */
+export function filterLocales(enabledCodes: string[]): Locale[] {
+	return enabledCodes.map((code) => findLocaleByCode(code)).filter((locale): locale is Locale => locale !== undefined)
+}

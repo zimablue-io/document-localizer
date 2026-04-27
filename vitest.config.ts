@@ -4,5 +4,8 @@ export default defineConfig({
 	test: {
 		include: ['apps/desktop/tests/**/*.test.ts'],
 		environment: 'node',
+		alias: {
+			// Mock electron API for tests
+		},
 	},
 })
