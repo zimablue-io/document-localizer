@@ -369,6 +369,7 @@ export default function App() {
 		if (!output) return
 
 		setTasksDocs((prev) => prev.filter((d) => d.id !== selectedOutputId))
+		setSelectedOutputId(null)
 		toast.success('Document approved')
 
 		const historyEntries = (await window.electron.getHistory()) as HistoryEntry[]
@@ -377,13 +378,14 @@ export default function App() {
 			await window.electron.updateHistory(entry.id, { status: 'approved' })
 			updateHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs])
+	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs, setSelectedOutputId])
 
 	const handleReject = useCallback(async () => {
 		const output = tasksDocs.find((d) => d.id === selectedOutputId)
 		if (!output) return
 
 		setTasksDocs((prev) => prev.filter((d) => d.id !== selectedOutputId))
+		setSelectedOutputId(null)
 		toast.success('Document rejected')
 
 		const historyEntries = (await window.electron.getHistory()) as HistoryEntry[]
@@ -392,7 +394,7 @@ export default function App() {
 			await window.electron.updateHistory(entry.id, { status: 'rejected' })
 			updateHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs])
+	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs, setSelectedOutputId])
 
 	const handleUpdateLocalizedText = useCallback(
 		(paragraphIndex: number, newText: string) => {
