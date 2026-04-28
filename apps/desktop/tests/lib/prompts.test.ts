@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
 	buildPrompt,
 	DEFAULT_LOCALIZATION_PROMPT,
-	DEFAULT_TRANSLATION_PROMPT,
 	LOCALE_DETECTION_PROMPT,
+	validatePromptTemplate,
 } from '../../src/lib/prompts'
 
 describe('lib/prompts', () => {
@@ -80,45 +80,29 @@ describe('lib/prompts', () => {
 		})
 	})
 
-	describe('DEFAULT_TRANSLATION_PROMPT', () => {
-		it('contains sourceLocale placeholder', () => {
-			expect(DEFAULT_TRANSLATION_PROMPT).toContain('{sourceLocale}')
+	describe('DEFAULT_LOCALIZATION_PROMPT', () => {
+		it('contains source locale placeholder', () => {
+			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('{sourceLocale}')
 		})
 
-		it('contains targetLocale placeholder', () => {
-			expect(DEFAULT_TRANSLATION_PROMPT).toContain('{targetLocale}')
+		it('contains target locale placeholder', () => {
+			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('{targetLocale}')
 		})
 
 		it('contains text placeholder', () => {
-			expect(DEFAULT_TRANSLATION_PROMPT).toContain('{text}')
+			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('{text}')
 		})
 
-		it('contains BEGIN/END markers', () => {
-			expect(DEFAULT_TRANSLATION_PROMPT).toContain('---BEGIN TEXT---')
-			expect(DEFAULT_TRANSLATION_PROMPT).toContain('---END TEXT---')
+		it('contains clear output language instruction', () => {
+			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('Output language')
 		})
 
-		it('contains translation requirements', () => {
-			expect(DEFAULT_TRANSLATION_PROMPT).toContain('Translate')
-			expect(DEFAULT_TRANSLATION_PROMPT).toContain('professional')
-		})
-	})
-
-	describe('DEFAULT_LOCALIZATION_PROMPT', () => {
-		it('contains STRICT LOCALIZATION RULES', () => {
-			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('STRICT LOCALIZATION RULES')
+		it('contains conversion rules', () => {
+			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('Convert words')
 		})
 
-		it('contains WORD REPLACEMENT guidance', () => {
-			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('WORD REPLACEMENT ONLY')
-		})
-
-		it('contains PRESERVE guidance', () => {
-			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('PRESERVE EVERYTHING')
-		})
-
-		it('contains OUTPUT FORMAT guidance', () => {
-			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('OUTPUT FORMAT')
+		it('contains OUTPUT marker', () => {
+			expect(DEFAULT_LOCALIZATION_PROMPT).toContain('OUTPUT:')
 		})
 	})
 
@@ -142,21 +126,6 @@ describe('lib/prompts', () => {
 	})
 
 	describe('prompt substitution', () => {
-		it('generates valid translation prompt', () => {
-			const prompt = buildPrompt(DEFAULT_TRANSLATION_PROMPT, {
-				sourceLocale: 'en-US',
-				targetLocale: 'fr-FR',
-				text: 'Hello, how are you?',
-			})
-
-			expect(prompt).toContain('en-US')
-			expect(prompt).toContain('fr-FR')
-			expect(prompt).toContain('Hello, how are you?')
-			expect(prompt).not.toContain('{sourceLocale}')
-			expect(prompt).not.toContain('{text}')
-			// Note: {targetLocale} appears in the prompt instructions, not replaced
-		})
-
 		it('generates valid localization prompt', () => {
 			const prompt = buildPrompt(DEFAULT_LOCALIZATION_PROMPT, {
 				sourceLocale: 'en-US',
@@ -176,6 +145,54 @@ describe('lib/prompts', () => {
 
 			expect(prompt).toContain('This is some English text.')
 			expect(prompt).not.toContain('{text}')
+		})
+	})
+
+	describe('validatePromptTemplate', () => {
+		it('returns valid for prompt with all required vars', () => {
+			const result = validatePromptTemplate('From {sourceLocale} to {targetLocale}: {text}')
+			expect(result.valid).toBe(true)
+			expect(result.missingVars).toEqual([])
+		})
+
+		it('returns invalid with missing sourceLocale', () => {
+			const result = validatePromptTemplate('Translate: {text}')
+			expect(result.valid).toBe(false)
+			expect(result.missingVars).toContain('{sourceLocale}')
+		})
+
+		it('returns invalid with missing targetLocale', () => {
+			const result = validatePromptTemplate('From {sourceLocale}: {text}')
+			expect(result.valid).toBe(false)
+			expect(result.missingVars).toContain('{targetLocale}')
+		})
+
+		it('returns invalid with missing text', () => {
+			const result = validatePromptTemplate('From {sourceLocale} to {targetLocale}')
+			expect(result.valid).toBe(false)
+			expect(result.missingVars).toContain('{text}')
+		})
+
+		it('returns invalid with all vars missing', () => {
+			const result = validatePromptTemplate('Just a plain prompt')
+			expect(result.valid).toBe(false)
+			expect(result.missingVars).toContain('{sourceLocale}')
+			expect(result.missingVars).toContain('{targetLocale}')
+			expect(result.missingVars).toContain('{text}')
+		})
+
+		it('handles empty template', () => {
+			const result = validatePromptTemplate('')
+			expect(result.valid).toBe(false)
+			expect(result.missingVars).toContain('{sourceLocale}')
+			expect(result.missingVars).toContain('{targetLocale}')
+			expect(result.missingVars).toContain('{text}')
+		})
+
+		it('validates default localization prompt is valid', () => {
+			const result = validatePromptTemplate(DEFAULT_LOCALIZATION_PROMPT)
+			expect(result.valid).toBe(true)
+			expect(result.missingVars).toEqual([])
 		})
 	})
 })

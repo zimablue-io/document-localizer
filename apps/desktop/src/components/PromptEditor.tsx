@@ -1,11 +1,13 @@
 import { Button, Input } from '@doclocalizer/ui'
 import { Check, Edit2, FilePen, RotateCcw, Trash2, X } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { validatePromptTemplate } from '../lib/prompts'
 import type { Settings } from '../lib/types'
 
 interface PromptEditorProps {
 	settings: Settings
 	promptContent: string
+	savedContent: string
 	isEditing: boolean
 	onSetEditing: (editing: boolean) => void
 	onContentChange: (content: string) => void
@@ -18,6 +20,7 @@ interface PromptEditorProps {
 export function PromptEditor({
 	settings,
 	promptContent,
+	savedContent,
 	isEditing,
 	onSetEditing,
 	onContentChange,
@@ -28,6 +31,9 @@ export function PromptEditor({
 }: PromptEditorProps) {
 	const [isRenaming, setIsRenaming] = useState(false)
 	const [renameValue, setRenameValue] = useState('')
+
+	const missingVars = useMemo(() => validatePromptTemplate(promptContent).missingVars, [promptContent])
+	const hasChanges = promptContent !== savedContent
 
 	const handleRenameConfirm = () => {
 		if (renameValue.trim() && renameValue.endsWith('.md')) {
@@ -40,6 +46,12 @@ export function PromptEditor({
 	const handleRenameCancel = () => {
 		setIsRenaming(false)
 		setRenameValue('')
+	}
+
+	const handleSave = () => {
+		if (missingVars.length === 0) {
+			onSave()
+		}
 	}
 
 	return (
@@ -82,10 +94,12 @@ export function PromptEditor({
 				<div className="flex gap-2">
 					{isEditing ? (
 						<>
-							<Button size="sm" onClick={onSave}>
-								<Check className="w-4 h-4 mr-1" />
-								Save
-							</Button>
+							{hasChanges && (
+								<Button size="sm" onClick={handleSave} disabled={missingVars.length > 0}>
+									<Check className="w-4 h-4 mr-1" />
+									Save
+								</Button>
+							)}
 							<Button variant="outline" size="sm" onClick={() => onSetEditing(false)}>
 								Cancel
 							</Button>
@@ -119,9 +133,24 @@ export function PromptEditor({
 				placeholder="Enter your prompt..."
 			/>
 			<p className="text-xs text-muted-foreground">
-				Template: <code className="bg-secondary px-1 rounded">{'{sourceLocale}'}</code>,{' '}
-				<code className="bg-secondary px-1 rounded">{'{targetLocale}'}</code>,{' '}
-				<code className="bg-secondary px-1 rounded">{'{text}'}</code>
+				Template:{' '}
+				<code
+					className={`px-1 rounded ${missingVars.includes('{sourceLocale}') ? 'text-destructive' : 'bg-secondary'}`}
+				>
+					{'{sourceLocale}'}
+				</code>
+				,{' '}
+				<code
+					className={`px-1 rounded ${missingVars.includes('{targetLocale}') ? 'text-destructive' : 'bg-secondary'}`}
+				>
+					{'{targetLocale}'}
+				</code>
+				,{' '}
+				<code
+					className={`px-1 rounded ${missingVars.includes('{text}') ? 'text-destructive' : 'bg-secondary'}`}
+				>
+					{'{text}'}
+				</code>
 			</p>
 		</div>
 	)

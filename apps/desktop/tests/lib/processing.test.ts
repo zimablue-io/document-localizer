@@ -1,46 +1,156 @@
-import { describe, expect, it } from 'vitest'
-import { cleanResponse } from '../../src/lib/processing'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-describe('lib/processing', () => {
-	describe('cleanResponse', () => {
-		it('trims whitespace', () => {
-			expect(cleanResponse('  Hello world  ')).toBe('Hello world')
+// Mock window.electron before importing
+const mockGenerateAI = vi.fn()
+vi.stubGlobal('window', {
+	electron: {
+		generateAI: mockGenerateAI,
+	},
+})
+
+// Import after mocking
+import { processParagraph } from '../../src/lib/processing'
+import { buildPrompt, DEFAULT_LOCALIZATION_PROMPT } from '../../src/lib/prompts'
+
+describe('processParagraph', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+		mockGenerateAI.mockResolvedValue({
+			content: 'Translated text',
+			error: null,
+		})
+	})
+
+	it('should process with pre-built content and return cleaned response', async () => {
+		const content = buildPrompt('Translate from en-US to ja-JP:\n\n---BEGIN TEXT---\n{text}\n---END TEXT---', {
+			sourceLocale: 'en-US',
+			targetLocale: 'ja-JP',
+			text: 'Hello world',
 		})
 
-		it('removes code fences', () => {
-			expect(cleanResponse('```markdown\nHello world\n```')).toBe('Hello world')
-			expect(cleanResponse('```\nHello world\n```')).toBe('Hello world')
-			expect(cleanResponse('```MARKDOWN\nHello\n```')).toBe('Hello')
+		const result = await processParagraph({
+			apiUrl: 'http://localhost:11434',
+			model: 'llama3',
+			content,
 		})
 
-		it('removes BEGIN/END markers', () => {
-			const input = `Here's the translation:
----BEGIN TEXT---
-Hello world
----END TEXT---`
-			expect(cleanResponse(input)).toBe('Hello world')
+		expect(result).toBe('Translated text')
+		expect(mockGenerateAI).toHaveBeenCalledWith(
+			expect.objectContaining({
+				url: 'http://localhost:11434/chat/completions',
+				body: expect.objectContaining({
+					model: 'llama3',
+					messages: expect.arrayContaining([
+						expect.objectContaining({
+							role: 'user',
+						}),
+					]),
+				}),
+			})
+		)
+	})
+
+	it('should throw error when AI returns error', async () => {
+		mockGenerateAI.mockResolvedValue({
+			content: '',
+			error: 'Model not found',
 		})
 
-		it('removes leading commentary', () => {
-			// Commentary should be removed - result differs from input
-			expect(cleanResponse("Here's the translation: Hello")).not.toBe("Here's the translation: Hello")
-			expect(cleanResponse('Here is the translation: Hello')).not.toBe('Here is the translation: Hello')
-			expect(cleanResponse('Translate the text above: Hello')).not.toBe('Translate the text above: Hello')
+		await expect(
+			processParagraph({
+				apiUrl: 'http://localhost:11434',
+				model: 'llama3',
+				content: 'Translate this',
+			})
+		).rejects.toThrow('Model not found')
+	})
+})
+
+describe('buildPrompt', () => {
+	it('should replace all placeholders', () => {
+		const result = buildPrompt('From {sourceLocale} to {targetLocale}: {text}', {
+			sourceLocale: 'en-US',
+			targetLocale: 'ja-JP',
+			text: 'Hello',
 		})
 
-		it('handles complex responses', () => {
-			const input = `\`\`\`markdown
----BEGIN TEXT---
-Hello, how are you?
----END TEXT---
-\`\`\``
+		expect(result).toBe('From en-US to ja-JP: Hello')
+		expect(result).not.toContain('{sourceLocale}')
+		expect(result).not.toContain('{targetLocale}')
+		expect(result).not.toContain('{text}')
+	})
 
-			expect(cleanResponse(input)).toBe('Hello, how are you?')
+	it('should replace ALL occurrences of placeholders (not just first)', () => {
+		const template = '{targetLocale} → Use {targetLocale} spelling. Never use {targetLocale} variants.'
+		const result = buildPrompt(template, {
+			sourceLocale: 'en-US',
+			targetLocale: 'de-DE',
+			text: 'test',
 		})
 
-		it('returns clean text unchanged', () => {
-			expect(cleanResponse('Hello world')).toBe('Hello world')
-			expect(cleanResponse('Simple text')).toBe('Simple text')
+		// Should have no placeholders left
+		expect(result).not.toContain('{targetLocale}')
+		// Should have replaced all 3 occurrences
+		expect(result.match(/de-DE/g)?.length).toBe(3)
+	})
+
+	it('should work with DEFAULT_LOCALIZATION_PROMPT', () => {
+		const result = buildPrompt(DEFAULT_LOCALIZATION_PROMPT, {
+			sourceLocale: 'en-US',
+			targetLocale: 'de-DE',
+			text: 'Colour is spelled with "ou".',
 		})
+
+		expect(result).not.toContain('{sourceLocale}')
+		expect(result).not.toContain('{targetLocale}')
+		expect(result).toContain('en-US')
+		expect(result).toContain('de-DE')
+	})
+})
+
+describe('integration: prompt building for multiple paragraphs', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it('should build consistent prompt prefix for all paragraphs', () => {
+		const promptTemplate =
+			'Translate from {sourceLocale} to {targetLocale}.\n\n---BEGIN TEXT---\n{text}\n---END TEXT---'
+
+		// Build prefix once
+		const prefix = buildPrompt(promptTemplate, {
+			sourceLocale: 'en-US',
+			targetLocale: 'de-DE',
+			text: '', // Empty - just for prefix
+		})
+		const promptWithoutText = prefix.replace(/\n---BEGIN TEXT---\n---END TEXT---\n*$/, '')
+
+		// Build content for multiple paragraphs
+		const paragraph1Content = `${promptWithoutText}\n\n---BEGIN TEXT---\nHello world\n---END TEXT---`
+		const paragraph2Content = `${promptWithoutText}\n\n---BEGIN TEXT---\nGoodbye world\n---END TEXT---`
+
+		// Both should have the same locale instructions
+		expect(paragraph1Content).toContain('en-US')
+		expect(paragraph1Content).toContain('de-DE')
+		expect(paragraph2Content).toContain('en-US')
+		expect(paragraph2Content).toContain('de-DE')
+
+		// Neither should have unfilled placeholders
+		expect(paragraph1Content).not.toContain('{sourceLocale}')
+		expect(paragraph1Content).not.toContain('{targetLocale}')
+		expect(paragraph2Content).not.toContain('{sourceLocale}')
+		expect(paragraph2Content).not.toContain('{targetLocale}')
+	})
+
+	it('should handle locale with hyphens like de-DE', () => {
+		const promptTemplate = 'Convert from {sourceLocale} to {targetLocale}'
+		const result = buildPrompt(promptTemplate, {
+			sourceLocale: 'en-US',
+			targetLocale: 'de-DE',
+			text: 'test',
+		})
+
+		expect(result).toContain('de-DE')
+		expect(result).not.toContain('{targetLocale}')
 	})
 })

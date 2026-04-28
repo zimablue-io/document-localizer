@@ -1,5 +1,5 @@
 import { Button } from '@doclocalizer/ui'
-import { ChevronDown, FolderOpen, History, RefreshCw } from 'lucide-react'
+import { ChevronDown, FolderOpen, History, Plus, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 // Custom hook for connection checking
@@ -102,7 +102,7 @@ export default function Header({
 				<h1 className="text-xl font-semibold">Document Localizer</h1>
 
 				{/* Model Dropdown */}
-				{activeModel && (
+				{models && models.length > 0 ? (
 					<div className="relative" ref={modelDropdownRef}>
 						<div
 							role="button"
@@ -122,7 +122,7 @@ export default function Header({
 							className={`flex items-center gap-1.5 px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors ${
 								processingCount > 0 ? 'cursor-default' : 'cursor-pointer'
 							}`}
-							title={`Model: ${activeModel.name}\nAPI: ${apiUrl}\n${processingCount > 0 ? 'Processing documents...' : 'Click to change model'}`}
+							title={`Model: ${activeModel?.name}\nAPI: ${apiUrl}\n${processingCount > 0 ? 'Processing documents...' : 'Click to change model'}`}
 						>
 							<span>{activeModel?.name}</span>
 							<div className="relative group">
@@ -202,10 +202,15 @@ export default function Header({
 							</div>
 						)}
 					</div>
+				) : (
+					<Button variant="outline" size="sm" onClick={() => onOpenSettingsTab?.('api')}>
+						<Plus className="w-4 h-4 mr-1" />
+						Add Model
+					</Button>
 				)}
 
 				{/* Prompt Profile Dropdown */}
-				{activePromptId && (
+				{promptList && promptList.length > 0 ? (
 					<div className="relative" ref={promptDropdownRef}>
 						<div
 							role="button"
@@ -275,6 +280,11 @@ export default function Header({
 							</div>
 						)}
 					</div>
+				) : (
+					<Button variant="outline" size="sm" onClick={() => onOpenSettingsTab?.('prompts')}>
+						<Plus className="w-4 h-4 mr-1" />
+						Add Prompt
+					</Button>
 				)}
 			</div>
 			<div className="flex gap-2">

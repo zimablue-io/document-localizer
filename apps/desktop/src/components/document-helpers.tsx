@@ -13,10 +13,12 @@ interface LocaleSelectProps {
 }
 
 export function LocaleSelect({ value, onChange, locales, disabled, showSameLocaleWarning }: LocaleSelectProps) {
+	const isInvalid = value && !locales?.some((l) => l.code === value)
+
 	return (
 		<div className="flex items-center gap-1">
 			<Select value={value} onValueChange={onChange} disabled={disabled}>
-				<SelectTrigger className="h-7 w-28">
+				<SelectTrigger className={`h-7 w-28 ${isInvalid ? 'border-destructive' : ''}`}>
 					<SelectValue placeholder="Select..." />
 				</SelectTrigger>
 				<SelectContent>
@@ -28,7 +30,14 @@ export function LocaleSelect({ value, onChange, locales, disabled, showSameLocal
 				</SelectContent>
 			</Select>
 			<div className="w-5 h-5 flex items-center justify-center">
-				{showSameLocaleWarning ? (
+				{isInvalid ? (
+					<div className="group relative flex items-center">
+						<XCircle className="w-4 h-4 text-destructive" />
+						<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10 w-48 p-2 bg-popover border border-border rounded-lg shadow-lg text-xs text-popover-foreground">
+							Locale not available - please select a different one
+						</div>
+					</div>
+				) : showSameLocaleWarning ? (
 					<div className="group relative flex items-center">
 						<AlertTriangle className="w-4 h-4 text-orange-500" />
 						<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10 w-48 p-2 bg-popover border border-border rounded-lg shadow-lg text-xs text-popover-foreground">

@@ -47,6 +47,7 @@ packages/core/src/
 3. **Use Biome for formatting**: `pnpm lint:fix`
 4. **Settings stored in JSON files** - no database, no conf library
 5. **All file ops go through IPC** - renderer has no direct fs access
+6. **Test-first for bugs/features**: When fixing bugs or implementing features, write tests that FAIL before the fix, then PASS after. This prevents regressions and proves the fix works. Never claim "done" without tests verifying the behavior.
 
 ## Standard Commands
 

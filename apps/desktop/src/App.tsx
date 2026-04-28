@@ -24,6 +24,7 @@ export default function App() {
 		history,
 		isLoading,
 		setTasksDocs,
+		setProcessedDocs,
 		addSourceDocs,
 		removeSourceDoc,
 		removeTaskDoc,
@@ -41,6 +42,22 @@ export default function App() {
 	const [connectionRefreshKey] = useState(0)
 	const [activePrompt, setActivePrompt] = useState<string>('')
 	const [promptList, setPromptList] = useState<string[]>([])
+	const handlePromptListRefresh = useCallback(
+		async (newPromptId?: string) => {
+			const prompts = await window.electron.listPrompts()
+			setPromptList(prompts)
+			// Also reload active prompt content
+			const promptId = newPromptId || settings?.activePromptId
+			if (promptId) {
+				const content = await window.electron.readPrompt(promptId)
+				if (content) setActivePrompt(content)
+			}
+		},
+		[settings?.activePromptId]
+	)
+	const handleModelsRefresh = useCallback(() => {
+		void loadSettings().then(setSettings)
+	}, [])
 	const [pendingLocaleCheck, setPendingLocaleCheck] = useState<{
 		sourceDocId: string
 		detectedLocale: string
@@ -378,6 +395,7 @@ export default function App() {
 		if (!output) return
 
 		setTasksDocs((prev) => prev.filter((d) => d.id !== selectedOutputId))
+		setProcessedDocs((prev) => [...prev, { ...output, status: 'approved' as const }])
 		setSelectedOutputId(null)
 		toast.success('Document approved')
 
@@ -387,13 +405,14 @@ export default function App() {
 			await window.electron.updateHistory(entry.id, { status: 'approved' })
 			updateHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs])
+	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs, setProcessedDocs])
 
 	const handleReject = useCallback(async () => {
 		const output = tasksDocs.find((d) => d.id === selectedOutputId)
 		if (!output) return
 
 		setTasksDocs((prev) => prev.filter((d) => d.id !== selectedOutputId))
+		setProcessedDocs((prev) => [...prev, { ...output, status: 'rejected' as const }])
 		setSelectedOutputId(null)
 		toast.success('Document rejected')
 
@@ -403,7 +422,7 @@ export default function App() {
 			await window.electron.updateHistory(entry.id, { status: 'rejected' })
 			updateHistory((await window.electron.getHistory()) as HistoryEntry[])
 		}
-	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs])
+	}, [selectedOutputId, tasksDocs, updateHistory, setTasksDocs, setProcessedDocs])
 
 	const handleUpdateLocalizedText = useCallback(
 		(paragraphIndex: number, newText: string) => {
@@ -557,6 +576,8 @@ export default function App() {
 					initialTab={settingsTab}
 					onChange={setSettings}
 					onClose={() => setShowSettings(false)}
+					onPromptListRefresh={handlePromptListRefresh}
+					onModelsRefresh={handleModelsRefresh}
 				/>
 			)}
 

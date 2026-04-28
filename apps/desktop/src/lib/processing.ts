@@ -4,7 +4,7 @@
 import { convertPdfToMarkdown } from '@doclocalizer/core'
 import { DISK_WRITE_INTERVAL, PROCESSING_CONCURRENCY } from './config'
 import { getOutputFileName, getOutputPath, isPdfPath, readPdfFile, readTextFile } from './files'
-import { buildPrompt, DEFAULT_TRANSLATION_PROMPT } from './prompts'
+import { buildPrompt, validatePromptTemplate } from './prompts'
 import type { ProcessingOutput, SourceDocument } from './types'
 
 /**
@@ -48,28 +48,16 @@ export async function extractMarkdown(sourceDoc: SourceDocument): Promise<string
 /**
  * Processes a single paragraph through the AI model.
  */
-export async function processParagraph(
-	text: string,
-	options: {
-		apiUrl: string
-		model: string
-		customPrompt?: string
-		sourceLocale: string
-		targetLocale: string
-	}
-): Promise<string> {
-	const promptTemplate = options.customPrompt || DEFAULT_TRANSLATION_PROMPT
-	const content = buildPrompt(promptTemplate, {
-		sourceLocale: options.sourceLocale,
-		targetLocale: options.targetLocale,
-		text,
-	})
-
+export async function processParagraph(options: {
+	apiUrl: string
+	model: string
+	content: string // Pre-built prompt with text already inserted
+}): Promise<string> {
 	const result = await window.electron.generateAI({
 		url: `${options.apiUrl}/chat/completions`,
 		body: {
 			model: options.model,
-			messages: [{ role: 'user', content }],
+			messages: [{ role: 'user', content: options.content }],
 			temperature: 0.2,
 			max_tokens: 4096,
 			stream: false,
@@ -143,6 +131,23 @@ export async function processDocument(options: ProcessingOptions): Promise<Proce
 		onIntermediateWrite,
 	} = options
 
+	// Validate prompt ONCE at the start
+	if (!customPrompt) {
+		throw new Error('No prompt template configured. Please select a prompt in Settings.')
+	}
+
+	const templateValidation = validatePromptTemplate(customPrompt)
+	if (!templateValidation.valid) {
+		throw new Error(`Custom prompt is missing required variables: ${templateValidation.missingVars.join(', ')}`)
+	}
+
+	if (!sourceLocale || !targetLocale) {
+		const missing = []
+		if (!sourceLocale) missing.push('source locale')
+		if (!targetLocale) missing.push('target locale')
+		throw new Error(`Please select the ${missing.join(' and ')} before processing`)
+	}
+
 	onStatusChange('parsing')
 
 	const markdown = await extractMarkdown(sourceDoc)
@@ -162,6 +167,13 @@ export async function processDocument(options: ProcessingOptions): Promise<Proce
 	// Initialize output file
 	await window.electron.writeTextFile(outputPath, '')
 
+	// Build base prompt ONCE with locales replaced, keeping {text} as literal placeholder
+	const basePrompt = buildPrompt(customPrompt, {
+		sourceLocale,
+		targetLocale,
+		text: '{text}', // Keep as placeholder to be replaced per paragraph
+	})
+
 	const localizedParagraphs: string[] = []
 
 	// Process in parallel batches
@@ -173,14 +185,15 @@ export async function processDocument(options: ProcessingOptions): Promise<Proce
 
 		const batch = paragraphs.slice(i, i + PROCESSING_CONCURRENCY)
 
+		// Replace {text} placeholder with actual paragraph (simple string operation per paragraph)
+		const contents = batch.map((p) => basePrompt.replace('{text}', p))
+
 		const results = await Promise.all(
-			batch.map((p) =>
-				processParagraph(p, {
+			contents.map((content) =>
+				processParagraph({
 					apiUrl,
 					model,
-					customPrompt,
-					sourceLocale,
-					targetLocale,
+					content,
 				})
 			)
 		)

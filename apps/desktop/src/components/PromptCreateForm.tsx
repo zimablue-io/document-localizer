@@ -1,5 +1,7 @@
 import { Button, Input, Label } from '@doclocalizer/ui'
 import { Plus, X } from 'lucide-react'
+import { useMemo } from 'react'
+import { validatePromptTemplate } from '../lib/prompts'
 
 interface PromptCreateFormProps {
 	newPromptName: string
@@ -18,6 +20,11 @@ export function PromptCreateForm({
 	onCreate,
 	onCancel,
 }: PromptCreateFormProps) {
+	const missingVars = useMemo(() => validatePromptTemplate(newPromptContent).missingVars, [newPromptContent])
+
+	const isValidName = newPromptName.trim() && /^[a-zA-Z0-9-]+$/.test(newPromptName)
+	const canCreate = isValidName && missingVars.length === 0
+
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
@@ -38,7 +45,7 @@ export function PromptCreateForm({
 						placeholder="my-prompt"
 						className="flex-1"
 						onKeyDown={(e) => {
-							if (e.key === 'Enter' && newPromptName.trim()) onCreate()
+							if (e.key === 'Enter' && canCreate) onCreate()
 							if (e.key === 'Escape') onCancel()
 						}}
 						autoFocus
@@ -48,7 +55,7 @@ export function PromptCreateForm({
 				<p className="text-xs text-muted-foreground">Only letters, numbers, and hyphens allowed</p>
 			</div>
 			<div className="flex gap-2">
-				<Button onClick={onCreate} disabled={!newPromptName.trim() || !/^[a-zA-Z0-9-]+$/.test(newPromptName)}>
+				<Button onClick={onCreate} disabled={!canCreate}>
 					<Plus className="w-4 h-4 mr-1" />
 					Create
 				</Button>
@@ -63,9 +70,24 @@ export function PromptCreateForm({
 				placeholder="Enter your prompt..."
 			/>
 			<p className="text-xs text-muted-foreground">
-				Template: <code className="bg-secondary px-1 rounded">{'{sourceLocale}'}</code>,{' '}
-				<code className="bg-secondary px-1 rounded">{'{targetLocale}'}</code>,{' '}
-				<code className="bg-secondary px-1 rounded">{'{text}'}</code>
+				Template:{' '}
+				<code
+					className={`px-1 rounded ${missingVars.includes('{sourceLocale}') ? 'text-destructive' : 'bg-secondary'}`}
+				>
+					{'{sourceLocale}'}
+				</code>
+				,{' '}
+				<code
+					className={`px-1 rounded ${missingVars.includes('{targetLocale}') ? 'text-destructive' : 'bg-secondary'}`}
+				>
+					{'{targetLocale}'}
+				</code>
+				,{' '}
+				<code
+					className={`px-1 rounded ${missingVars.includes('{text}') ? 'text-destructive' : 'bg-secondary'}`}
+				>
+					{'{text}'}
+				</code>
 			</p>
 		</div>
 	)

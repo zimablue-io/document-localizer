@@ -1,55 +1,16 @@
-/**
- * Localization instruction prompts for document translation.
- * Contains the default prompts and prompt generation utilities.
- */
+export const DEFAULT_LOCALIZATION_PROMPT = `You are a professional translator. Your task is to convert text from {sourceLocale} to {targetLocale}.
 
-export const DEFAULT_TRANSLATION_PROMPT = `You are a professional translator. Translate the following text from {sourceLocale} to {targetLocale}.
+RULES:
+1. Output language: {targetLocale} ONLY - never output {sourceLocale}
+2. Convert words to match {targetLocale} spelling/grammar conventions
+3. Keep sentence structure and punctuation identical
+4. Do not add, remove, or change any words except for locale-specific conversions
+5. Do not explain or comment on the translation
 
-REQUIREMENTS:
-- Translate meaning accurately, not word-for-word
-- Use natural, fluent {targetLocale} phrasing
-- Maintain the same tone and formality level as the original
-- Preserve all punctuation and paragraph structure
-- Keep proper nouns (names, places) in their localized form if known
-
----BEGIN TEXT---
+TEXT TO CONVERT:
 {text}
----END TEXT---
 
-OUTPUT ONLY the translation. No explanations, comments, or markers.`
-
-export const DEFAULT_LOCALIZATION_PROMPT = `STRICT LOCALIZATION RULES - FOLLOW EXACTLY:
-
-CRITICAL - THIS IS WORD REPLACEMENT ONLY:
-- You are NOT writing a story. You are NOT being creative. You are ONLY replacing words.
-- NEVER invent, add, remove, or modify any content beyond word-level changes
-- NEVER change sentence structure, punctuation, or paragraph structure
-- NEVER add dialogue, descriptions, or narrative that wasn't in the original
-- The text you output MUST contain EXACTLY the same words as the input, just with spelling/word replacements
-
-TARGET LOCALE CONVERSIONS ONLY:
-- color → colour (or vice versa depending on target)
-- honor → honour (or vice versa)
-- Words like "mom", "dad", "football", "soccer" → use the target locale equivalent
-- Only make changes that match the target locale's spelling/word conventions
-
-PRESERVE EVERYTHING EXACTLY:
-- Keep every single word from the original
-- Keep all punctuation exactly as written
-- Keep all paragraph breaks exactly as in the original
-- Keep all dialogue exactly as written - do NOT add speech tags like "he said" or "she whispered"
-- Keep all capitalization exactly as in the original
-- Keep all sentence structure exactly as in the original
-- If a word has no locale-specific alternative, leave it EXACTLY as is
-
-OUTPUT FORMAT:
-- Output EXACTLY one paragraph of text
-- NO markers, NO comments, NO explanations
-- NO leading/trailing whitespace
-
----BEGIN TEXT---
-{text}
----END TEXT---`
+OUTPUT:`
 
 /**
  * Prompt for AI-based locale detection (source mismatch detection only).
@@ -67,8 +28,23 @@ export function buildPrompt(
 	template: string,
 	params: { sourceLocale?: string; targetLocale?: string; text: string }
 ): string {
+	if (!params.sourceLocale || !params.targetLocale) {
+		console.warn('buildPrompt called without locale values', {
+			sourceLocale: params.sourceLocale,
+			targetLocale: params.targetLocale,
+			hasSourcePlaceholder: template.includes('{sourceLocale}'),
+			hasTargetPlaceholder: template.includes('{targetLocale}'),
+		})
+	}
 	return template
-		.replace('{sourceLocale}', params.sourceLocale || '')
-		.replace('{targetLocale}', params.targetLocale || '')
+		.replace(/{sourceLocale}/g, params.sourceLocale || '')
+		.replace(/{targetLocale}/g, params.targetLocale || '')
 		.replace('{text}', params.text)
+}
+
+const REQUIRED_PROMPT_VARS = ['{sourceLocale}', '{targetLocale}', '{text}'] as const
+
+export function validatePromptTemplate(template: string): { valid: boolean; missingVars: string[] } {
+	const missingVars = REQUIRED_PROMPT_VARS.filter((v) => !template.includes(v))
+	return { valid: missingVars.length === 0, missingVars }
 }

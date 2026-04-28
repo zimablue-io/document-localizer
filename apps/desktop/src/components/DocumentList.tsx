@@ -58,6 +58,17 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
 	)
 }
 
+function sortLocalesWithSelected<T extends { code: string }>(items: T[], selectedCode: string | undefined): T[] {
+	if (!items || items.length === 0) return []
+	if (!selectedCode) return items
+
+	const selected = items.find((item) => item.code === selectedCode)
+	if (!selected) return items
+
+	const rest = items.filter((item) => item.code !== selectedCode)
+	return [selected, ...rest]
+}
+
 export default function DocumentList({
 	sourceDocs,
 	tasksDocs,
@@ -223,14 +234,17 @@ export default function DocumentList({
 										<LocaleSelect
 											value={doc.sourceLocale || ''}
 											onChange={(v) => v && onLocaleChange?.(doc.id, v, undefined)}
-											locales={locales?.filter((l) => l.code !== doc.targetLocale)}
+											locales={sortLocalesWithSelected(
+												locales?.filter((l) => l.code !== doc.targetLocale) || [],
+												doc.sourceLocale
+											)}
 										/>
 									</td>
 									<td className="py-3 px-2">
 										<LocaleSelect
 											value={doc.targetLocale || ''}
 											onChange={(v) => v && onLocaleChange?.(doc.id, undefined, v)}
-											locales={locales}
+											locales={sortLocalesWithSelected(locales || [], doc.targetLocale)}
 											showSameLocaleWarning={
 												doc.sourceLocale === doc.targetLocale && !!doc.sourceLocale
 											}
@@ -242,7 +256,12 @@ export default function DocumentList({
 												variant="secondary"
 												size="sm"
 												onClick={() => onProcess(doc.id)}
-												disabled={!doc.sourceLocale || !doc.targetLocale}
+												disabled={
+													!doc.sourceLocale ||
+													!doc.targetLocale ||
+													!locales?.some((l) => l.code === doc.sourceLocale) ||
+													!locales?.some((l) => l.code === doc.targetLocale)
+												}
 											>
 												<Zap className="w-4 h-4 mr-1" />
 												Process

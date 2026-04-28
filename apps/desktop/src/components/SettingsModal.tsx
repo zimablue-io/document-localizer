@@ -13,9 +13,18 @@ interface SettingsModalProps {
 	initialTab?: string
 	onChange: (settings: Settings) => void
 	onClose: () => void
+	onPromptListRefresh?: (promptId?: string) => void
+	onModelsRefresh?: () => void
 }
 
-export default function SettingsModal({ settings, initialTab = 'locales', onChange, onClose }: SettingsModalProps) {
+export default function SettingsModal({
+	settings,
+	initialTab = 'locales',
+	onChange,
+	onClose,
+	onPromptListRefresh,
+	onModelsRefresh,
+}: SettingsModalProps) {
 	const [activeTab, setActiveTab] = useState<string>(initialTab)
 	const [localeSearch, setLocaleSearch] = useState('')
 
@@ -27,6 +36,7 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 	// Prompt management state
 	const [promptList, setPromptList] = useState<string[]>([])
 	const [promptContent, setPromptContent] = useState<string>('')
+	const [savedPromptContent, setSavedPromptContent] = useState<string>('')
 	const [newPromptName, setNewPromptName] = useState('')
 	const [newPromptContent, setNewPromptContent] = useState(DEFAULT_LOCALIZATION_PROMPT)
 	const [showNewPromptInput, setShowNewPromptInput] = useState(false)
@@ -35,11 +45,32 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 	const loadPrompts = useCallback(async () => {
 		const prompts = await window.electron.listPrompts()
 		setPromptList(prompts)
+
 		if (settings.activePromptId) {
+			// Check if active prompt still exists
+			if (!prompts.includes(settings.activePromptId)) {
+				// Active prompt was deleted, switch to first available or empty
+				const remaining = prompts[0] || ''
+				onChange({ ...settings, activePromptId: remaining })
+				if (remaining) {
+					const content = await window.electron.readPrompt(remaining)
+					if (content) {
+						setPromptContent(content)
+						setSavedPromptContent(content)
+					}
+				} else {
+					setPromptContent('')
+					setSavedPromptContent('')
+				}
+				return
+			}
 			const content = await window.electron.readPrompt(settings.activePromptId)
-			if (content) setPromptContent(content)
+			if (content) {
+				setPromptContent(content)
+				setSavedPromptContent(content)
+			}
 		}
-	}, [settings.activePromptId])
+	}, [settings.activePromptId, onChange, settings])
 
 	useEffect(() => {
 		void loadPrompts()
@@ -50,12 +81,16 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 		onChange({ ...settings, activePromptId: filename })
 		setIsEditingPrompt(edit)
 		const content = await window.electron.readPrompt(filename)
-		if (content) setPromptContent(content)
+		if (content) {
+			setPromptContent(content)
+			setSavedPromptContent(content)
+		}
 	}
 
 	const handleSavePrompt = async () => {
 		if (settings.activePromptId) {
 			await window.electron.writePrompt(settings.activePromptId, promptContent)
+			setSavedPromptContent(promptContent)
 		}
 	}
 
@@ -66,9 +101,11 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 			await loadPrompts()
 			onChange({ ...settings, activePromptId: filename })
 			setPromptContent(newPromptContent)
+			setSavedPromptContent(newPromptContent)
 			setNewPromptName('')
 			setNewPromptContent(DEFAULT_LOCALIZATION_PROMPT)
 			setShowNewPromptInput(false)
+			onPromptListRefresh?.(filename)
 		}
 	}
 
@@ -80,7 +117,16 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 		if (remaining.length > 0) {
 			onChange({ ...settings, activePromptId: remaining[0] })
 			const content = await window.electron.readPrompt(remaining[0])
-			if (content) setPromptContent(content)
+			if (content) {
+				setPromptContent(content)
+				setSavedPromptContent(content)
+			}
+			onPromptListRefresh?.(remaining[0])
+		} else {
+			setPromptContent('')
+			setSavedPromptContent('')
+			onChange({ ...settings, activePromptId: '' })
+			onPromptListRefresh?.()
 		}
 	}
 
@@ -89,6 +135,10 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 		await loadPrompts()
 		if (settings.activePromptId === 'default.md') {
 			setPromptContent(DEFAULT_LOCALIZATION_PROMPT)
+			setSavedPromptContent(DEFAULT_LOCALIZATION_PROMPT)
+			onPromptListRefresh?.('default.md')
+		} else {
+			onPromptListRefresh?.()
 		}
 	}
 
@@ -100,6 +150,7 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 			await window.electron.deletePrompt(settings.activePromptId)
 			await loadPrompts()
 			onChange({ ...settings, activePromptId: newName })
+			onPromptListRefresh?.(newName)
 		}
 	}
 
@@ -119,7 +170,13 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 		(locale) =>
 			locale.name.toLowerCase().includes(localeSearch.toLowerCase()) ||
 			locale.code.toLowerCase().includes(localeSearch.toLowerCase())
-	)
+	).sort((a, b) => {
+		const aEnabled = settings.enabledLocaleCodes.includes(a.code)
+		const bEnabled = settings.enabledLocaleCodes.includes(b.code)
+		if (aEnabled && !bEnabled) return -1
+		if (!aEnabled && bEnabled) return 1
+		return a.name.localeCompare(b.name)
+	})
 
 	const handleAddModel = () => {
 		if (newModelName.trim()) {
@@ -130,6 +187,7 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 			const updatedModels = [...settings.models, newModel]
 			onChange({ ...settings, models: updatedModels, activeModelId: newModel.id })
 			setNewModelName('')
+			onModelsRefresh?.()
 		}
 	}
 
@@ -140,6 +198,7 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 			newActiveId = updatedModels[0]?.id || ''
 		}
 		onChange({ ...settings, models: updatedModels, activeModelId: newActiveId })
+		onModelsRefresh?.()
 	}
 
 	const handleStartEditModel = (model: ModelConfig) => {
@@ -367,6 +426,23 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 									onCreate={handleCreatePrompt}
 									onCancel={() => setShowNewPromptInput(false)}
 								/>
+							) : promptList.length === 0 ? (
+								<div className="text-center py-8">
+									<p className="text-muted-foreground mb-4">No prompts yet</p>
+									<Button
+										onClick={async () => {
+											await window.electron.writePrompt('default.md', DEFAULT_LOCALIZATION_PROMPT)
+											onChange({ ...settings, activePromptId: 'default.md' })
+											setPromptContent(DEFAULT_LOCALIZATION_PROMPT)
+											setSavedPromptContent(DEFAULT_LOCALIZATION_PROMPT)
+											await loadPrompts()
+											onPromptListRefresh?.('default.md')
+										}}
+									>
+										<Plus className="w-4 h-4 mr-1" />
+										Create default prompt
+									</Button>
+								</div>
 							) : (
 								<div className="space-y-4">
 									<div className="flex items-center justify-between">
@@ -387,6 +463,7 @@ export default function SettingsModal({ settings, initialTab = 'locales', onChan
 										<PromptEditor
 											settings={settings}
 											promptContent={promptContent}
+											savedContent={savedPromptContent}
 											isEditing={isEditingPrompt}
 											onSetEditing={setIsEditingPrompt}
 											onContentChange={setPromptContent}
