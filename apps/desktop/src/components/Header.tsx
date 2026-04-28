@@ -49,12 +49,15 @@ interface HeaderProps {
 	apiUrl?: string
 	isConfigured: boolean
 	connectionRefreshKey?: number
+	appVersion?: string
+	updateInfo?: { version: string } | null
 	onSelectFiles: () => void
 	onOpenSettings: () => void
 	onOpenSettingsTab?: (tab: string) => void
 	onOpenHistory: () => void
 	onModelChange?: (modelId: string) => void
 	onPromptChange?: (promptId: string) => void
+	onCheckForUpdates?: () => void
 }
 
 export default function Header({
@@ -65,12 +68,15 @@ export default function Header({
 	apiUrl,
 	isConfigured,
 	connectionRefreshKey,
+	appVersion,
+	updateInfo,
 	onSelectFiles,
 	onOpenSettings,
 	onOpenSettingsTab,
 	onOpenHistory,
 	onModelChange,
 	onPromptChange,
+	onCheckForUpdates,
 }: HeaderProps) {
 	const processingCount = 0
 	const [showModelDropdown, setShowModelDropdown] = useState(false)
@@ -318,6 +324,12 @@ export default function Header({
 						/>
 					</svg>
 				</Button>
+				{appVersion && <span className="text-xs text-muted-foreground ml-1 self-center">v{appVersion}</span>}
+				{updateInfo && (
+					<Button variant="secondary" size="sm" onClick={onCheckForUpdates}>
+						Update to v{updateInfo.version}
+					</Button>
+				)}
 			</div>
 		</header>
 	)

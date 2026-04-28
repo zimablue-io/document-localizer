@@ -42,6 +42,8 @@ export default function App() {
 	const [connectionRefreshKey] = useState(0)
 	const [activePrompt, setActivePrompt] = useState<string>('')
 	const [promptList, setPromptList] = useState<string[]>([])
+	const [appVersion, setAppVersion] = useState<string>('')
+	const [updateInfo, setUpdateInfo] = useState<{ version: string } | null>(null)
 	const handlePromptListRefresh = useCallback(
 		async (newPromptId?: string) => {
 			const prompts = await window.electron.listPrompts()
@@ -69,6 +71,27 @@ export default function App() {
 	// Load settings on mount
 	useEffect(() => {
 		void loadSettings().then(setSettings)
+	}, [])
+
+	// Load app version on mount
+	useEffect(() => {
+		window.electron.appVersion().then(setAppVersion)
+	}, [])
+
+	// Listen for update available events
+	useEffect(() => {
+		window.electron.onUpdateAvailable((data) => {
+			setUpdateInfo(data)
+		})
+	}, [])
+
+	const handleCheckForUpdates = useCallback(() => {
+		toast.info('Checking for updates...')
+		window.electron.checkForUpdates().then((result) => {
+			if ('dev' in result) {
+				toast.info('Update check not available in development mode')
+			}
+		})
 	}, [])
 
 	// Load prompt list on mount
@@ -521,6 +544,8 @@ export default function App() {
 				apiUrl={settings?.apiUrl}
 				isConfigured={!!isConfigured}
 				connectionRefreshKey={connectionRefreshKey}
+				appVersion={appVersion}
+				updateInfo={updateInfo}
 				onSelectFiles={handleSelectFiles}
 				onOpenSettings={() => setShowSettings(true)}
 				onOpenSettingsTab={(tab) => {
@@ -532,6 +557,7 @@ export default function App() {
 				onPromptChange={(promptId) =>
 					setSettings((prev) => (prev ? { ...prev, activePromptId: promptId } : null))
 				}
+				onCheckForUpdates={handleCheckForUpdates}
 			/>
 
 			<main className="flex-1 p-6 overflow-auto">

@@ -35,6 +35,9 @@ export interface ElectronAPI {
 	readPrompt: (filename: string) => Promise<string | null>
 	writePrompt: (filename: string, content: string) => Promise<boolean>
 	deletePrompt: (filename: string) => Promise<boolean>
+	appVersion: () => Promise<string>
+	checkForUpdates: () => Promise<{ dev?: true; error?: string }>
+	onUpdateAvailable: (callback: (data: { version: string }) => void) => void
 }
 
 declare global {

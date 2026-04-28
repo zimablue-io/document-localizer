@@ -18,6 +18,10 @@ function setupAutoUpdater() {
 
 	autoUpdater.on('update-available', (info) => {
 		log('Update available:', info.version)
+		// Notify renderer
+		if (mainWindow) {
+			mainWindow.webContents.send('update:available', { version: info.version })
+		}
 		// Prompt user to download
 		if (mainWindow) {
 			dialog
@@ -75,6 +79,27 @@ function checkForUpdates() {
 		})
 	}
 }
+
+// IPC Handlers
+ipcMain.handle('app:version', () => {
+	return app.getVersion()
+})
+
+ipcMain.handle('update:check', () => {
+	if (process.env.NODE_ENV === 'production') {
+		return autoUpdater
+			.checkForUpdates()
+			.then((result) => {
+				log('Update check result:', result)
+				return result
+			})
+			.catch((err) => {
+				log('Update check failed:', err.message)
+				return { error: err.message }
+			})
+	}
+	return { dev: true }
+})
 
 let mainWindow: BrowserWindow | null = null
 

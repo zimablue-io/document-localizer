@@ -57,4 +57,12 @@ contextBridge.exposeInMainWorld('electron', {
 	writePrompt: (filename: string, content: string) => ipcRenderer.invoke('prompts:write', filename, content),
 
 	deletePrompt: (filename: string) => ipcRenderer.invoke('prompts:delete', filename),
+
+	appVersion: () => ipcRenderer.invoke('app:version'),
+
+	checkForUpdates: () => ipcRenderer.invoke('update:check'),
+
+	onUpdateAvailable: (callback: (data: { version: string }) => void) => {
+		ipcRenderer.on('update:available', (_event, data) => callback(data))
+	},
 })
