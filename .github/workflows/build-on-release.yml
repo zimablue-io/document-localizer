@@ -45,7 +45,15 @@ jobs:
 
       - name: Sync version to desktop package.json
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          TAG_NAME="${GITHUB_REF/refs\/tags\//}"
+          echo "Tag name is: $TAG_NAME"
+          # For tags like desktop-v0.2.0, extract just the version part (0.2.0)
+          if [[ "$TAG_NAME" == desktop-* ]]; then
+            VERSION="${TAG_NAME#desktop-}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION="${TAG_NAME#v}"
+          fi
           echo "Syncing version $VERSION to apps/desktop/package.json"
           node -e "
             const fs = require('fs');
