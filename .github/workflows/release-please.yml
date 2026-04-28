@@ -21,11 +21,11 @@ jobs:
         id: release-please
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
-          path: apps/desktop
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
       - name: Trigger Build Release workflow
-        if: steps.release-please.outputs.release_created == 'true'
+        if: steps.release-please.outputs['apps/desktop--release_created'] == 'true'
         uses: actions/github-script@v7
         with:
           script: |
@@ -33,5 +33,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'build-on-release.yml',
-              ref: '${{ steps.release-please.outputs.tag_name }}',
+              ref: "${{ steps.release-please.outputs['apps/desktop--tag_name'] }}",
             })
