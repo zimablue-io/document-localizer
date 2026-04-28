@@ -22,7 +22,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
-          config-file: .release-please.json
+          path: apps/desktop
 
       - name: Trigger Build Release workflow
         if: steps.release-please.outputs.release_created == 'true'
