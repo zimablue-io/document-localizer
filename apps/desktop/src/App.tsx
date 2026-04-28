@@ -8,7 +8,7 @@ import Header from './components/Header'
 import HistoryPanel from './components/HistoryPanel'
 import SettingsModal from './components/SettingsModal'
 import { useDocuments } from './hooks/useDocuments'
-import { contentToPdf, ExportFormat, getFileExtension } from './lib/export'
+import { contentToDocx, contentToPdf, ExportFormat, getFileExtension } from './lib/export'
 import { ALL_LOCALES } from './lib/locales'
 import { createProcessingOutput, extractMarkdown, processDocument } from './lib/processing'
 import { LOCALE_DETECTION_PROMPT } from './lib/prompts'
@@ -466,7 +466,9 @@ export default function App() {
 					filters: [
 						format === 'pdf'
 							? { name: 'PDF', extensions: ['pdf'] }
-							: { name: 'Markdown', extensions: ['md'] },
+							: format === 'doc'
+								? { name: 'Word Document', extensions: ['doc'] }
+								: { name: 'Markdown', extensions: ['md'] },
 					],
 				})
 
@@ -475,6 +477,11 @@ export default function App() {
 				if (format === 'pdf') {
 					const pdfBlob = contentToPdf(output.localizedText, baseFilename)
 					const arrayBuffer = await pdfBlob.arrayBuffer()
+					const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+					await window.electron.writeBase64File(savePath, base64)
+				} else if (format === 'doc') {
+					const docBlob = await contentToDocx(output.localizedText)
+					const arrayBuffer = await docBlob.arrayBuffer()
 					const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
 					await window.electron.writeBase64File(savePath, base64)
 				} else {

@@ -1,6 +1,7 @@
+import { convertMarkdownToDocx } from '@mohtasham/md-to-docx'
 import { jsPDF } from 'jspdf'
 
-export type ExportFormat = 'md' | 'pdf'
+export type ExportFormat = 'md' | 'pdf' | 'doc'
 
 export interface ExportOptions {
 	format: ExportFormat
@@ -9,18 +10,36 @@ export interface ExportOptions {
 }
 
 export function getFileExtension(format: ExportFormat): string {
-	return format === 'pdf' ? '.pdf' : '.md'
+	switch (format) {
+		case 'pdf':
+			return '.pdf'
+		case 'doc':
+			return '.doc'
+		default:
+			return '.md'
+	}
 }
 
 export function getMimeType(format: ExportFormat): string {
-	return format === 'pdf' ? 'application/pdf' : 'text/markdown'
+	switch (format) {
+		case 'pdf':
+			return 'application/pdf'
+		case 'doc':
+			return 'application/msword'
+		default:
+			return 'text/markdown'
+	}
 }
 
 export function getFilterForFormat(format: ExportFormat): { name: string; extensions: string[] } {
-	if (format === 'pdf') {
-		return { name: 'PDF', extensions: ['pdf'] }
+	switch (format) {
+		case 'pdf':
+			return { name: 'PDF', extensions: ['pdf'] }
+		case 'doc':
+			return { name: 'Word Document', extensions: ['doc'] }
+		default:
+			return { name: 'Markdown', extensions: ['md'] }
 	}
-	return { name: 'Markdown', extensions: ['md'] }
 }
 
 export function markdownToPlainText(markdown: string): string {
@@ -98,4 +117,8 @@ export function contentToPdf(content: string, filename: string): Blob {
 	doc.text(`Page ${pageNumber}`, pageWidth - margin - 15, pageHeight - 10)
 
 	return doc.output('blob')
+}
+
+export async function contentToDocx(content: string): Promise<Blob> {
+	return convertMarkdownToDocx(content)
 }

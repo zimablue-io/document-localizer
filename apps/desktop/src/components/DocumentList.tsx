@@ -1,6 +1,6 @@
 import type { DocumentState } from '@doclocalizer/core'
 import { Button } from '@doclocalizer/ui'
-import { ChevronDown, Eye, FileText, FileType, Square, Zap } from 'lucide-react'
+import { ChevronDown, Eye, File, FileText, FileType, Square, Zap } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LocaleSelect, STATUS_COLORS, STATUS_LABELS, StatusIcon } from './document-helpers'
 
@@ -40,7 +40,7 @@ interface DocumentListProps {
 	onRemoveProcessed: (id: string) => void
 	onStop?: (id: string) => void
 	onFilesAdded?: (paths: string[]) => void
-	onExport?: (id: string, format: 'md' | 'pdf') => void
+	onExport?: (id: string, format: 'md' | 'pdf' | 'doc') => void
 	onLocaleChange?: (id: string, source?: string, target?: string) => void
 }
 
@@ -513,6 +513,19 @@ export default function DocumentList({
 															>
 																<FileType className="w-5 h-5 text-primary shrink-0" />
 																<span className="whitespace-nowrap">PDF (.pdf)</span>
+															</button>
+															<button
+																type="button"
+																className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted flex items-center gap-3"
+																onClick={() => {
+																	onExport?.(doc.id, 'doc')
+																	setShowExportMenu(null)
+																}}
+															>
+																<File className="w-5 h-5 text-primary shrink-0" />
+																<span className="whitespace-nowrap">
+																	Word Document (.doc)
+																</span>
 															</button>
 														</div>
 													)}

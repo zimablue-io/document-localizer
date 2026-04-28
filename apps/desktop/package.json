@@ -44,6 +44,7 @@
   "dependencies": {
     "@doclocalizer/core": "workspace:*",
     "@doclocalizer/ui": "workspace:*",
+    "@mohtasham/md-to-docx": "^2.10.1",
     "date-fns": "^4.1.0",
     "diff": "^9.0.0",
     "electron-updater": "^6.3.9",
