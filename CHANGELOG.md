@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/zimablue-io/document-localizer/compare/v0.3.0...v0.3.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* update release configuration and manifest files ([db76303](https://github.com/zimablue-io/document-localizer/commit/db7630397ed31b915e607f8f41a43d357b1dc895))
+
 ## [0.3.0](https://github.com/zimablue-io/document-localizer/compare/v0.2.0...v0.3.0) (2026-04-28)
 
 
