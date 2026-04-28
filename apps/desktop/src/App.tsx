@@ -425,77 +425,6 @@ export default function App() {
 		[selectedOutputId, setTasksDocs]
 	)
 
-	const handleShiftLocalizedParagraph = useCallback(
-		(paragraphIndex: number, direction: 'up' | 'down') => {
-			setTasksDocs((prev) =>
-				prev.map((d) => {
-					if (d.id !== selectedOutputId) return d
-
-					const paragraphs = (d.localizedText || '').split(/\n\n+/)
-					const swapIndex = direction === 'up' ? paragraphIndex - 1 : paragraphIndex + 1
-
-					if (swapIndex < 0 || swapIndex >= paragraphs.length) return d
-
-					const temp = paragraphs[paragraphIndex]
-					paragraphs[paragraphIndex] = paragraphs[swapIndex]
-					paragraphs[swapIndex] = temp
-
-					return {
-						...d,
-						localizedText: paragraphs.join('\n\n'),
-					}
-				})
-			)
-			toast.success(`Paragraph shifted ${direction}`)
-		},
-		[selectedOutputId, setTasksDocs]
-	)
-
-	const handleInsertLocalizedParagraph = useCallback(
-		(paragraphIndex: number, direction: 'above' | 'below') => {
-			setTasksDocs((prev) =>
-				prev.map((d) => {
-					if (d.id !== selectedOutputId) return d
-
-					const paragraphs = (d.localizedText || '').split(/\n\n+/)
-					const insertAt = direction === 'above' ? paragraphIndex : paragraphIndex + 1
-					paragraphs.splice(insertAt, 0, '[New paragraph - edit this]')
-
-					return {
-						...d,
-						localizedText: paragraphs.join('\n\n'),
-					}
-				})
-			)
-			toast.success(`Paragraph inserted ${direction}`)
-		},
-		[selectedOutputId, setTasksDocs]
-	)
-
-	const handleDeleteLocalizedParagraph = useCallback(
-		(paragraphIndex: number) => {
-			setTasksDocs((prev) =>
-				prev.map((d) => {
-					if (d.id !== selectedOutputId) return d
-
-					const paragraphs = (d.localizedText || '').split(/\n\n+/)
-					if (paragraphs.length <= 1) {
-						toast.error('Cannot delete - document must have at least one paragraph')
-						return d
-					}
-					paragraphs.splice(paragraphIndex, 1)
-
-					return {
-						...d,
-						localizedText: paragraphs.join('\n\n'),
-					}
-				})
-			)
-			toast.success('Paragraph deleted')
-		},
-		[selectedOutputId, setTasksDocs]
-	)
-
 	const handleExport = useCallback(
 		async (id: string, format: ExportFormat) => {
 			const output = tasksDocs.find((d) => d.id === id) || processedDocs.find((d) => d.id === id)
@@ -587,9 +516,6 @@ export default function App() {
 						onReject={handleReject}
 						onBack={() => setSelectedOutputId(null)}
 						onUpdateLocalizedText={handleUpdateLocalizedText}
-						onShiftLocalizedParagraph={handleShiftLocalizedParagraph}
-						onInsertLocalizedParagraph={handleInsertLocalizedParagraph}
-						onDeleteLocalizedParagraph={handleDeleteLocalizedParagraph}
 					/>
 				)}
 

@@ -1,4 +1,4 @@
-import { Button } from '@doclocalizer/ui'
+import { Button, ScrollArea } from '@doclocalizer/ui'
 import { diffWords } from 'diff'
 import { Check, LayoutList, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
@@ -15,9 +15,6 @@ interface DiffViewProps {
 	onReject: () => void
 	onBack: () => void
 	onUpdateLocalizedText?: (paragraphIndex: number, newText: string) => void
-	onShiftLocalizedParagraph?: (paragraphIndex: number, direction: 'up' | 'down') => void
-	onInsertLocalizedParagraph?: (paragraphIndex: number, direction: 'above' | 'below') => void
-	onDeleteLocalizedParagraph?: (paragraphIndex: number) => void
 }
 
 type ViewMode = 'side-by-side' | 'list'
@@ -111,9 +108,6 @@ export default function DiffViewComponent({
 	onReject,
 	onBack,
 	onUpdateLocalizedText,
-	onShiftLocalizedParagraph,
-	onInsertLocalizedParagraph,
-	onDeleteLocalizedParagraph,
 }: DiffViewProps) {
 	const [viewMode, setViewMode] = useState<ViewMode>('side-by-side')
 	const [editingParagraph, setEditingParagraph] = useState<EditState | null>(null)
@@ -157,15 +151,6 @@ export default function DiffViewComponent({
 	const handleCancelEdit = useCallback(() => {
 		setEditingParagraph(null)
 	}, [])
-
-	const handleDeleteParagraph = useCallback(
-		(paragraphIndex: number) => {
-			if (onDeleteLocalizedParagraph) {
-				onDeleteLocalizedParagraph(paragraphIndex)
-			}
-		},
-		[onDeleteLocalizedParagraph]
-	)
 
 	return (
 		<div className="flex flex-col h-full bg-background">
@@ -227,7 +212,7 @@ export default function DiffViewComponent({
 					/* Side-by-side view with each paragraph as a row */
 					<div className="flex flex-col h-full">
 						{/* Column headers */}
-						<div className="flex border-b border-border bg-[#0f0f12]">
+						<div className="flex border-b border-border bg-[#0f0f12] shrink-0">
 							<div className="flex-1 px-4 py-2 bg-red-950/20 border-r border-border/50">
 								<span className="text-sm font-medium text-red-400">Original</span>
 							</div>
@@ -236,7 +221,7 @@ export default function DiffViewComponent({
 							</div>
 						</div>
 						{/* Paragraph rows - each row is a self-contained flex row with equal height sides */}
-						<div className="flex-1 overflow-y-auto bg-[#0f0f12]">
+						<ScrollArea className="flex-1 min-h-0 bg-[#0f0f12]">
 							{paragraphChanges.map(({ index, origPara, locPara }) => (
 								<div
 									key={index}
@@ -269,126 +254,47 @@ export default function DiffViewComponent({
 														</Button>
 													</>
 												) : (
-													<>
-														<button
-															onClick={() => onShiftLocalizedParagraph?.(index, 'up')}
-															disabled={index === 0}
-															className="p-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed"
-															title="Shift up"
-															aria-label="Shift up"
+													<button
+														onClick={() => handleStartEdit(index, locPara)}
+														className="p-1 rounded bg-green-900/30 hover:bg-green-800/50 text-green-300"
+														title="Edit this paragraph"
+														aria-label="Edit this paragraph"
+													>
+														<svg
+															className="w-3 h-3"
+															fill="none"
+															viewBox="0 0 24 24"
+															stroke="currentColor"
+															aria-hidden="true"
 														>
-															<svg
-																className="w-3 h-3"
-																fill="none"
-																viewBox="0 0 24 24"
-																stroke="currentColor"
-																aria-hidden="true"
-															>
-																<path
-																	strokeLinecap="round"
-																	strokeLinejoin="round"
-																	strokeWidth={2}
-																	d="M5 15l7-7 7 7"
-																/>
-															</svg>
-														</button>
-														<button
-															onClick={() => onShiftLocalizedParagraph?.(index, 'down')}
-															disabled={index === paragraphChanges.length - 1}
-															className="p-1 rounded bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed"
-															title="Shift down"
-															aria-label="Shift down"
-														>
-															<svg
-																className="w-3 h-3"
-																fill="none"
-																viewBox="0 0 24 24"
-																stroke="currentColor"
-																aria-hidden="true"
-															>
-																<path
-																	strokeLinecap="round"
-																	strokeLinejoin="round"
-																	strokeWidth={2}
-																	d="M19 9l-7 7-7-7"
-																/>
-															</svg>
-														</button>
-														<button
-															onClick={() => onInsertLocalizedParagraph?.(index, 'above')}
-															className="px-2 py-1 rounded bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 text-xs"
-															title="Insert above"
-														>
-															+ Above
-														</button>
-														<button
-															onClick={() => onInsertLocalizedParagraph?.(index, 'below')}
-															className="px-2 py-1 rounded bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 text-xs"
-															title="Insert below"
-														>
-															+ Below
-														</button>
-														<button
-															onClick={() => handleStartEdit(index, locPara)}
-															className="p-1 rounded bg-green-900/30 hover:bg-green-800/50 text-green-300"
-															title="Edit this paragraph"
-															aria-label="Edit this paragraph"
-														>
-															<svg
-																className="w-3 h-3"
-																fill="none"
-																viewBox="0 0 24 24"
-																stroke="currentColor"
-																aria-hidden="true"
-															>
-																<path
-																	strokeLinecap="round"
-																	strokeLinejoin="round"
-																	strokeWidth={2}
-																	d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-																/>
-															</svg>
-														</button>
-														<button
-															onClick={() => handleDeleteParagraph(index)}
-															className="p-1 rounded bg-red-900/30 hover:bg-red-800/50 text-red-300"
-															title="Delete paragraph"
-															aria-label="Delete paragraph"
-														>
-															<svg
-																className="w-3 h-3"
-																fill="none"
-																viewBox="0 0 24 24"
-																stroke="currentColor"
-																aria-hidden="true"
-															>
-																<path
-																	strokeLinecap="round"
-																	strokeLinejoin="round"
-																	strokeWidth={2}
-																	d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-																/>
-															</svg>
-														</button>
-													</>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																strokeWidth={2}
+																d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+															/>
+														</svg>
+													</button>
 												)}
 											</div>
 										</div>
-										<LocalizedColumn
-											origPara={origPara}
-											locPara={locPara}
-											isEditing={editingParagraph?.paragraphIndex === index}
-											editText={
-												editingParagraph?.paragraphIndex === index
-													? editingParagraph.text
-													: undefined
-											}
-											onTextChange={handleTextChange}
-										/>
+										<div className="min-h-[80px]">
+											<LocalizedColumn
+												origPara={origPara}
+												locPara={locPara}
+												isEditing={editingParagraph?.paragraphIndex === index}
+												editText={
+													editingParagraph?.paragraphIndex === index
+														? editingParagraph.text
+														: undefined
+												}
+												onTextChange={handleTextChange}
+											/>
+										</div>
 									</div>
 								</div>
 							))}
-						</div>
+						</ScrollArea>
 					</div>
 				) : (
 					/* List view - only changed paragraphs */
