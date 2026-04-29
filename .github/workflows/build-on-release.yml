@@ -3,12 +3,6 @@ name: Build Release
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag (e.g., desktop-v0.4.0)'
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -17,25 +11,18 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     concurrency:
-      group: ${{ github.workflow }}-${{ github.event.inputs.version || github.ref_name }}
+      group: ${{ github.workflow }}-${{ matrix.os }}
       cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        include:
-          - os: macos-latest
-            artifact: dmg
-          - os: windows-latest
-            artifact: exe
-          - os: ubuntu-latest
-            artifact: AppImage
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && 'main' || github.ref_name }}
+          ref: ${{ github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -51,11 +38,7 @@ jobs:
       - name: Sync version to desktop package.json
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG_NAME="${{ github.event.inputs.version }}"
-          else
-            TAG_NAME="${GITHUB_REF/refs\/tags\//}"
-          fi
+          TAG_NAME="${GITHUB_REF/refs\/tags\//}"
           echo "Tag name is: $TAG_NAME"
           if [[ "$TAG_NAME" == desktop-* ]]; then
             VERSION="${TAG_NAME#desktop-}"
@@ -84,6 +67,5 @@ jobs:
             apps/desktop/dist/*.exe
             apps/desktop/dist/*.AppImage
           draft: false
-          replace: true
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
-          name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
