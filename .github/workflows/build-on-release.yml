@@ -5,16 +5,15 @@ on:
     types: [published]
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}
-  cancel-in-progress: true
-
 permissions:
   contents: write
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}
+      cancel-in-progress: true
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
