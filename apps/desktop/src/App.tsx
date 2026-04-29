@@ -1,3 +1,4 @@
+// Document Localizer - Main Application Component
 import { Button } from '@doclocalizer/ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
