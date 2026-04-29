@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/zimablue-io/document-localizer/compare/desktop-v0.4.1...desktop-v0.4.2) (2026-04-29)
+
+
+### Bug Fixes
+
+* add ms as explicit dependency for electron-updater ([4f19e35](https://github.com/zimablue-io/document-localizer/commit/4f19e35863993f68eb39aeda26d7249e744054f7))
+
 ## [0.4.1](https://github.com/zimablue-io/document-localizer/compare/desktop-v0.4.0...desktop-v0.4.1) (2026-04-29)
 
 
