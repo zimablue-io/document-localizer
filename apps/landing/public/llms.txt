@@ -1,41 +1,54 @@
 # Document Localizer
 
-AI-powered document localization tool that transforms documents between American and British English.
+AI-powered desktop application for document localization and translation between hundreds of locale pairs. Entirely local - documents never leave the user's machine.
 
 ## What It Does
 
-- Transform documents between American and British English variants
-- Works entirely on your local machine - documents never leave your computer
-- PDF and Markdown support
-- Side-by-side diff review before export
+Transform documents between locales (languages and regional variants) using local AI inference. The app provides a wide selection of locales to choose from, and actual translation capability depends on the AI model installed locally.
 
-## How It Works
+## Core Features
 
-1. Upload PDF or Markdown files
-2. Select source and target locales (e.g., American English → British English)
-3. AI localizes the content locally via Ollama, LM Studio, or llama.cpp
-4. Review changes in a diff view
-5. Export approved documents
+- **Locale Selection**: Choose from hundreds of locales for source and target
+- **Privacy-First**: All processing happens locally via Ollama, LM Studio, or llama.cpp - no cloud API calls
+- **Format Support**: Works with PDF and Markdown files
+- **Diff Review**: Side-by-side comparison view to review and approve/reject AI changes before export
+- **Export Options**: Export approved documents as Markdown or PDF
+
+## Use Cases
+
+1. **Content Localization**: Convert documentation for international audiences
+2. **Regional Adaptation**: Transform content between regional variants
+3. **Publishing Preparation**: Adapt content for specific regional markets
+4. **Document Migration**: Transform legacy documents to new regional standards
 
 ## System Requirements
 
-- macOS 12+
-- Local AI backend (Ollama, LM Studio, or llama.cpp)
+- Local AI backend: Ollama, LM Studio, or llama.cpp
 - 4GB+ RAM (8GB recommended)
-- ~5GB disk per AI model
+- ~5GB disk space per AI model
 
-## Links
+## Installation
 
-- Downloads: https://github.com/zimablue-io/document-localizer/releases
-- Source Code: https://github.com/zimablue-io/document-localizer
-- Issues: https://github.com/zimablue-io/document-localizer/issues
+1. Download from: https://github.com/zimablue-io/document-localizer/releases/latest
+2. Install a local AI backend (Ollama recommended): https://ollama.com
+3. Pull a model: `ollama pull llama3.2` or similar
+4. Launch Document Localizer, select source/target locales, and start localizing
 
-## Supported Platforms
+## Workflow
 
-Currently available for macOS only.
-Windows and Linux builds are planned.
+1. **Upload**: Select PDF or Markdown files
+2. **Configure**: Choose source locale and target locale
+3. **Process**: AI localizes content in chunks locally via selected backend
+4. **Review**: Side-by-side diff view shows changes with accept/reject per-chunk
+5. **Export**: Export approved document as Markdown or PDF
 
-## License
+## Project Information
 
-Copyright (c) 2024-2026 zimablue-io. Free for personal/non-commercial use only.
-Commercial use requires written permission. See LICENSE.md for details.
+- **Website**: https://zimablue-io.github.io/document-localizer/
+- **Repository**: https://github.com/zimablue-io/document-localizer
+- **Issues**: https://github.com/zimablue-io/document-localizer/issues
+- **Releases**: https://github.com/zimablue-io/document-localizer/releases
+
+## Licensing
+
+Copyright (c) 2024-2026 zimablue-io. Free for personal/non-commercial use. Commercial use requires written permission. Full license details in LICENSE.md at repository root.
