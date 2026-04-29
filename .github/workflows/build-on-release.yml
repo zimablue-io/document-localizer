@@ -50,6 +50,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Sync version to desktop package.json
+        shell: bash
         run: |
           TAG_NAME="${GITHUB_REF/refs\/tags\//}"
           echo "Tag name is: $TAG_NAME"
@@ -126,6 +127,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Sync version to desktop package.json
+        shell: bash
         run: |
           TAG_NAME="${{ github.event.inputs.version }}"
           echo "Tag name is: $TAG_NAME"
