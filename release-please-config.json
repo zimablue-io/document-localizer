@@ -1,7 +1,8 @@
 {
   "packages": {
     "apps/desktop": {
-      "release-type": "node"
+      "release-type": "node",
+      "skip-github-release": true
     }
   }
 }
