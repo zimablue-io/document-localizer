@@ -17,7 +17,7 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     concurrency:
-      group: ${{ github.workflow }}-${{ github.event.inputs.version || github.ref }}-${{ matrix.os }}
+      group: ${{ github.workflow }}-${{ github.event.inputs.version || github.ref_name }}
       cancel-in-progress: true
     strategy:
       fail-fast: false
@@ -84,5 +84,6 @@ jobs:
             apps/desktop/dist/*.exe
             apps/desktop/dist/*.AppImage
           draft: false
+          replace: true
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
           name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
