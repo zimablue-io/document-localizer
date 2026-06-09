@@ -1,46 +1,76 @@
 # Document Localizer
 
-AI-powered desktop application for document localization and translation between hundreds of locale pairs. Entirely local - documents never leave the user's machine.
+AI-powered desktop application for offline document localization and translation between 100+ locales. Entirely local - documents never leave the user's machine.
 
 ## What It Does
 
-Transform documents between locales (languages and regional variants) using local AI inference. The app provides a wide selection of locales to choose from, and actual translation capability depends on the AI model installed locally.
+Transforms PDF and Markdown documents between locales (languages and regional variants) using local AI inference. Supports hundreds of locale pairs including English variants (en-US, en-GB, en-AU, en-CA, en-IN, en-NZ, en-IE, en-ZA, en-SG), Spanish variants (es-ES, es-MX, es-AR, es-CO), Portuguese (pt-PT, pt-BR), French (fr-FR, fr-CA), German (de-DE, de-AT, de-CH), and 90+ more. Translation quality depends on the local AI model installed.
 
 ## Core Features
 
-- **Locale Selection**: Choose from hundreds of locales for source and target
-- **Privacy-First**: All processing happens locally via Ollama, LM Studio, or llama.cpp - no cloud API calls
-- **Format Support**: Works with PDF and Markdown files
-- **Diff Review**: Side-by-side comparison view to review and approve/reject AI changes before export
-- **Export Options**: Export approved documents as Markdown or PDF
+- **Locale Selection**: 100+ locales covering English, Spanish, Portuguese, French, German, Italian, Chinese, Japanese, Korean, Arabic, Hindi, and many more
+- **Privacy-First Local Translation**: All processing happens locally via Ollama, LM Studio, or llama.cpp - no cloud API calls, no telemetry, no data collection
+- **PDF and Markdown Support**: Read PDFs and Markdown files, output to PDF or Markdown
+- **Diff Review**: Side-by-side comparison view with paragraph-level approve or reject before export
+- **OpenAI-Compatible**: Works with any local model exposing an OpenAI-compatible API (Llama 3, Mistral, Phi, Gemma, Qwen, and more)
+- **Cross-Platform**: macOS, Windows, and Linux
 
 ## Use Cases
 
-1. **Content Localization**: Convert documentation for international audiences
-2. **Regional Adaptation**: Transform content between regional variants
-3. **Publishing Preparation**: Adapt content for specific regional markets
-4. **Document Migration**: Transform legacy documents to new regional standards
+1. **Content Localization**: Convert documentation, marketing copy, and product pages for international audiences
+2. **Regional Adaptation**: Transform content between regional variants (en-US to en-GB, es-ES to es-MX, fr-FR to fr-CA)
+3. **Privacy-Sensitive Translation**: Translate confidential documents (legal, medical, financial) without sending data to third-party APIs
+4. **Offline Workflows**: Translate documents on air-gapped machines or in restricted-network environments
+5. **Cost-Free Translation**: Avoid per-character cloud translation costs by running local models
+6. **Publishing Preparation**: Adapt content for specific regional markets before publication
 
-## System Requirements
+## Technical Specifications
 
-- Local AI backend: Ollama, LM Studio, or llama.cpp
-- 4GB+ RAM (8GB recommended)
-- ~5GB disk space per AI model
+- **Input formats**: PDF, Markdown (.md)
+- **Output formats**: PDF, Markdown (.md)
+- **AI backends supported**: Ollama, LM Studio, llama.cpp (any OpenAI-compatible local server)
+- **Recommended models**: Llama 3.2 (3B for low-end, 8B for quality), Mistral 7B, Phi-3, Gemma 2, Qwen 2.5
+- **System requirements**: 4GB RAM minimum (8GB recommended for 7B+ models), ~5GB disk per model
+- **Supported operating systems**: macOS, Windows, Linux
+- **Application type**: Electron desktop app (offline)
+- **Network access required**: No (except to download the app and models)
+- **Telemetry**: None
+
+## Comparison
+
+Document Localizer is:
+- **NOT a CAT tool** (Computer-Assisted Translation, like Trados or memoQ) - it is a fully automated AI translator
+- **NOT a Translation Management System** (TMS) - it is a single-user desktop app
+- **NOT cloud-based** - it has no server component and no account system
+- **NOT a general-purpose LLM frontend** - it is purpose-built for document localization with diff review
+
+Document Localizer IS:
+- A privacy-first alternative to DeepL, Google Translate, and Microsoft Translator for users who cannot send documents to third-party APIs
+- A free alternative to commercial CAT tools for one-off document translation
+- A consumer of any OpenAI-compatible local model server (Ollama, LM Studio, llama.cpp, vLLM, etc.)
 
 ## Installation
 
-1. Download from: https://github.com/zimablue-io/document-localizer/releases/latest
-2. Install a local AI backend (Ollama recommended): https://ollama.com
-3. Pull a model: `ollama pull llama3.2` or similar
-4. Launch Document Localizer, select source/target locales, and start localizing
+1. Download the latest release for your platform: https://github.com/zimablue-io/document-localizer/releases/latest
+2. Install a local AI backend:
+   - Ollama (recommended): https://ollama.com
+   - LM Studio: https://lmstudio.ai
+   - llama.cpp: https://github.com/ggerganov/llama.cpp
+3. Pull a model, for example: `ollama pull llama3.2:3b`
+4. Launch Document Localizer, enter your API URL (e.g. `http://localhost:11434/v1`) and model name in Settings
+5. Select source and target locales, then process your documents
 
 ## Workflow
 
-1. **Upload**: Select PDF or Markdown files
+1. **Upload**: Select PDF or Markdown files to add to your source library
 2. **Configure**: Choose source locale and target locale
-3. **Process**: AI localizes content in chunks locally via selected backend
-4. **Review**: Side-by-side diff view shows changes with accept/reject per-chunk
-5. **Export**: Export approved document as Markdown or PDF
+3. **Process**: AI localizes content in chunks locally via the selected backend
+4. **Review**: Side-by-side diff view shows changes with paragraph-level accept or reject
+5. **Export**: Export the approved document as Markdown or PDF
+
+## Keywords and Topic Clusters
+
+Primary topics: offline document translation, local LLM translation, privacy-first translation, AI document localizer, on-device translation, Ollama frontend, LM Studio GUI, llama.cpp translation app, PDF localizer, Markdown translator, English variant converter, British to American English, American to British English, regional language adaptation.
 
 ## Project Information
 
@@ -48,7 +78,9 @@ Transform documents between locales (languages and regional variants) using loca
 - **Repository**: https://github.com/zimablue-io/document-localizer
 - **Issues**: https://github.com/zimablue-io/document-localizer/issues
 - **Releases**: https://github.com/zimablue-io/document-localizer/releases
+- **Changelog**: https://github.com/zimablue-io/document-localizer/blob/main/CHANGELOG.md
+- **License**: https://github.com/zimablue-io/document-localizer/blob/main/LICENSE.md
 
 ## Licensing
 
-Copyright (c) 2024-2026 zimablue-io. Free for personal/non-commercial use. Commercial use requires written permission. Full license details in LICENSE.md at repository root.
+Copyright (c) 2024-2026 zimablue-io. Free for personal and non-commercial use. Commercial use requires written permission. Full license details in LICENSE.md at the repository root.

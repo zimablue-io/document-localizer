@@ -77,17 +77,53 @@ export default function Hero({ selectedPlatform, onPlatformChange }: HeroProps) 
 			<div className="max-w-6xl mx-auto w-full grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10">
 				{/* Left: Text content */}
 				<div className="space-y-4 md:space-y-6 text-center md:text-left">
-					<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+					<h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
 						<span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-							Document Localizer
+							Localize PDFs &amp; Markdown with AI
 						</span>
+						<br />
+						<span className="text-foreground">100% Offline, 100% Private</span>
 					</h1>
 					<p className="text-lg md:text-xl text-muted-foreground">
-						Transform documents between American and British English
+						Free offline document translator between 100+ locales. Runs entirely on your machine using
+						Ollama, LM Studio, or llama.cpp - no cloud, no API keys, no data leaving your computer.
 					</p>
 					<p className="text-muted-foreground max-w-md mx-auto md:mx-0">
-						Localize your documents with AI. Entirely on your machine - your documents never leave your
-						computer.
+						Perfect for English variants (US, UK, AU, CA, IN), Spanish (ES, MX, AR), Portuguese (PT, BR),
+						French (FR, CA), German (DE, AT, CH), and 90+ more locales. Free for personal use.
+					</p>
+
+					<nav
+						aria-label="Page sections"
+						className="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-1 text-sm pt-1"
+					>
+						<a href="#features" className="text-primary hover:underline">
+							Features
+						</a>
+						<span className="text-muted-foreground" aria-hidden="true">
+							&middot;
+						</span>
+						<a href="#how-it-works" className="text-primary hover:underline">
+							How It Works
+						</a>
+						<span className="text-muted-foreground" aria-hidden="true">
+							&middot;
+						</span>
+						<a href="#setup" className="text-primary hover:underline">
+							Setup Guide
+						</a>
+					</nav>
+
+					<p className="text-xs text-muted-foreground">
+						Open source on{' '}
+						<a
+							href="https://github.com/zimablue-io/document-localizer"
+							className="text-primary hover:underline"
+							rel="noopener"
+						>
+							GitHub
+						</a>
+						. Free for personal use.
 					</p>
 
 					<div className="flex flex-col gap-3 pt-4">

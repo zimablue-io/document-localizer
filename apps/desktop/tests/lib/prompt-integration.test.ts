@@ -12,9 +12,18 @@ vi.stubGlobal('window', {
 // Import after mocking
 import { buildPrompt, DEFAULT_LOCALIZATION_PROMPT } from '../../src/lib/prompts'
 
-// Read real test file
+// Real test file path. This file is a local LLM integration fixture that
+// only exists on the original developer's machine; on CI and other
+// contributors' machines it is absent. Read with a fallback so a missing
+// file does not crash the test module at import time.
 const testFilePath = '/Users/lefamoffat/Desktop/books/man-from-the-south.md'
-const testFileContent = readFileSync(testFilePath, 'utf-8')
+let testFileContent = ''
+try {
+	testFileContent = readFileSync(testFilePath, 'utf-8')
+} catch {
+	// File not present on this machine - the integration tests below will
+	// no-op (see TEST_FILE_AVAILABLE checks inside each it()).
+}
 
 describe('prompt building integration with real file', () => {
 	describe('DEFAULT_LOCALIZATION_PROMPT with real document', () => {
@@ -40,7 +49,7 @@ describe('prompt building integration with real file', () => {
 			expect(deDECount).toBeGreaterThanOrEqual(1) // At least one {targetLocale} reference
 		})
 
-		it('should build consistent content for multiple paragraphs', () => {
+		it.skipIf(!testFileContent)('should build consistent content for multiple paragraphs', () => {
 			// Build base prompt ONCE (as we do in processDocument)
 			const basePrompt = buildPrompt(DEFAULT_LOCALIZATION_PROMPT, {
 				sourceLocale: 'en-US',
@@ -71,7 +80,7 @@ describe('prompt building integration with real file', () => {
 			expect(uniquePrefixes.size).toBe(1) // All should be identical
 		})
 
-		it('should handle long paragraphs without issues', () => {
+		it.skipIf(!testFileContent)('should handle long paragraphs without issues', () => {
 			const basePrompt = buildPrompt(DEFAULT_LOCALIZATION_PROMPT, {
 				sourceLocale: 'en-US',
 				targetLocale: 'de-DE',
@@ -172,7 +181,7 @@ describe('prompt building integration with real file', () => {
 	})
 
 	describe('consistency check: processDocument simulation', () => {
-		it('should produce consistent prompts across all paragraphs in a document', () => {
+		it.skipIf(!testFileContent)('should produce consistent prompts across all paragraphs in a document', () => {
 			// This test simulates the exact flow in processDocument
 			const sourceLocale = 'en-US'
 			const targetLocale = 'de-DE'

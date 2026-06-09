@@ -1,7 +1,6 @@
 User-agent: *
 Allow: /
-
-User-agent: *
 Allow: /llms.txt
+Allow: /manifest.webmanifest
 
 Sitemap: https://zimablue-io.github.io/document-localizer/sitemap.xml

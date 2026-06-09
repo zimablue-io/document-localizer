@@ -12,12 +12,19 @@ vi.stubGlobal('window', {
 // Import after mocking
 import { buildPrompt, DEFAULT_LOCALIZATION_PROMPT } from '../../src/lib/prompts'
 
-// Real test file
+// Real test file path. This is a local LLM integration fixture that only
+// exists on the original developer's machine. Read with a fallback so a
+// missing file does not crash the test module at import time.
 const TEST_FILE_PATH = '/Users/lefamoffat/Desktop/books/man-from-the-south.md'
 const API_URL = 'http://localhost:8080'
 const MODEL = 'gemma3n:e2b-instruct'
 
-const testFileContent = readFileSync(TEST_FILE_PATH, 'utf-8')
+let testFileContent = ''
+try {
+	testFileContent = readFileSync(TEST_FILE_PATH, 'utf-8')
+} catch {
+	// File not present on this machine - integration tests below will no-op.
+}
 
 describe('REAL integration tests with gemma3n:e2b-instruct', () => {
 	beforeEach(() => {
@@ -28,7 +35,7 @@ describe('REAL integration tests with gemma3n:e2b-instruct', () => {
 		})
 	})
 
-	it('should process first 3 paragraphs with consistent locale', async () => {
+	it.skipIf(!testFileContent)('should process first 3 paragraphs with consistent locale', async () => {
 		const sourceLocale = 'en-US'
 		const targetLocale = 'de-DE'
 
@@ -91,7 +98,7 @@ describe('REAL integration tests with gemma3n:e2b-instruct', () => {
 		console.log('\n=== All paragraphs processed consistently! ===\n')
 	})
 
-	it('should verify locale consistency across all paragraphs', () => {
+	it.skipIf(!testFileContent)('should verify locale consistency across all paragraphs', () => {
 		const sourceLocale = 'en-US'
 		const targetLocale = 'de-DE'
 

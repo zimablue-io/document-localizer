@@ -286,6 +286,97 @@ export default function SetupGuide({ selectedPlatform }: SetupGuideProps) {
 						</div>
 					</div>
 				</div>
+
+				{/* FAQ */}
+				<div className="mt-12 pt-8 border-t border-border">
+					<h3 className="text-xl font-semibold text-center mb-6">Frequently Asked Questions</h3>
+					<div className="max-w-3xl mx-auto space-y-2">
+						<details className="group bg-card rounded-lg border border-border p-4">
+							<summary className="cursor-pointer font-medium list-none flex justify-between items-center">
+								<span>Is Document Localizer really free?</span>
+								<span
+									className="text-muted-foreground group-open:rotate-180 transition-transform"
+									aria-hidden="true"
+								>
+									&#9662;
+								</span>
+							</summary>
+							<p className="mt-2 text-sm text-muted-foreground">
+								Yes. Document Localizer is free for personal and non-commercial use. See the{' '}
+								<a
+									href="https://github.com/zimablue-io/document-localizer/blob/main/LICENSE.md"
+									className="text-primary hover:underline"
+								>
+									license
+								</a>{' '}
+								for commercial-use details.
+							</p>
+						</details>
+						<details className="group bg-card rounded-lg border border-border p-4">
+							<summary className="cursor-pointer font-medium list-none flex justify-between items-center">
+								<span>Do my documents get sent to the cloud?</span>
+								<span
+									className="text-muted-foreground group-open:rotate-180 transition-transform"
+									aria-hidden="true"
+								>
+									&#9662;
+								</span>
+							</summary>
+							<p className="mt-2 text-sm text-muted-foreground">
+								No. All processing happens locally on your machine via your chosen AI backend (Ollama,
+								LM Studio, or llama.cpp). The app never makes outbound network requests for your
+								document content.
+							</p>
+						</details>
+						<details className="group bg-card rounded-lg border border-border p-4">
+							<summary className="cursor-pointer font-medium list-none flex justify-between items-center">
+								<span>Which AI models are supported?</span>
+								<span
+									className="text-muted-foreground group-open:rotate-180 transition-transform"
+									aria-hidden="true"
+								>
+									&#9662;
+								</span>
+							</summary>
+							<p className="mt-2 text-sm text-muted-foreground">
+								Any local model exposing an OpenAI-compatible API works, including Llama 3.2, Mistral,
+								Phi-3, Gemma 2, and Qwen 2.5. Smaller models (3B) are fast; larger models (7B+) give
+								higher quality.
+							</p>
+						</details>
+						<details className="group bg-card rounded-lg border border-border p-4">
+							<summary className="cursor-pointer font-medium list-none flex justify-between items-center">
+								<span>Can it translate between non-English languages?</span>
+								<span
+									className="text-muted-foreground group-open:rotate-180 transition-transform"
+									aria-hidden="true"
+								>
+									&#9662;
+								</span>
+							</summary>
+							<p className="mt-2 text-sm text-muted-foreground">
+								Yes. The app supports 100+ locale pairs, including en-US to en-GB, es-ES to es-MX, fr-FR
+								to fr-CA, de-DE to de-AT, pt-PT to pt-BR, and many cross-language pairs depending on the
+								model you install.
+							</p>
+						</details>
+						<details className="group bg-card rounded-lg border border-border p-4">
+							<summary className="cursor-pointer font-medium list-none flex justify-between items-center">
+								<span>What file formats are supported?</span>
+								<span
+									className="text-muted-foreground group-open:rotate-180 transition-transform"
+									aria-hidden="true"
+								>
+									&#9662;
+								</span>
+							</summary>
+							<p className="mt-2 text-sm text-muted-foreground">
+								Input: PDF and Markdown (.md). Output: PDF and Markdown (.md). PDFs are parsed on-device
+								using pdfjs-dist.
+							</p>
+						</details>
+					</div>
+				</div>
 			</div>
 		</section>
 	)
