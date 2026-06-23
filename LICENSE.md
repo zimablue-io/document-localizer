@@ -1,6 +1,6 @@
 # License
 
-Copyright (c) 2024-2026 zimablue-io. All rights reserved.
+Copyright (c) 2026 zimablue-io. All rights reserved.
 
 ## Permission
 

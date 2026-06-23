@@ -38,11 +38,20 @@ Transforms PDF and Markdown documents between locales (languages and regional va
 
 ## Comparison
 
-Document Localizer is:
-- **NOT a CAT tool** (Computer-Assisted Translation, like Trados or memoQ) - it is a fully automated AI translator
-- **NOT a Translation Management System** (TMS) - it is a single-user desktop app
-- **NOT cloud-based** - it has no server component and no account system
-- **NOT a general-purpose LLM frontend** - it is purpose-built for document localization with diff review
+Document Localizer vs. Cloud Translators (DeepL, Google Translate, Microsoft Translator):
+
+- **Data Privacy**: All processing happens locally on your GPU. Your documents never leave your machine. Cloud translators send every document to their servers.
+- **Cost**: Free and open source. Run on your own hardware. Cloud translators charge $7–$31/month per user with per-character billing.
+- **Formatting Retention**: Preserves markdown, code blocks, tables, and layout structure. Cloud translators often break complex layouts and code formatting.
+- **Custom Models**: Plug in any OpenAI-compatible local LLM (Llama 3, Mistral, Gemma, Qwen, etc.). Cloud translators offer black-box models with zero customization.
+- **Diff & Review**: Built-in side-by-side diff editor lets you review and approve translations paragraph-by-paragraph before export. Cloud translators give you raw output with no review workflow.
+- **Air-Gapped**: Works 100% offline with no internet connection required. Cloud translators require a constant connection.
+
+Document Localizer is NOT:
+- A CAT tool (Computer-Assisted Translation, like Trados or memoQ) - it is a fully automated AI translator
+- A Translation Management System (TMS) - it is a single-user desktop app
+- Cloud-based - it has no server component and no account system
+- A general-purpose LLM frontend - it is purpose-built for document localization with diff review
 
 Document Localizer IS:
 - A privacy-first alternative to DeepL, Google Translate, and Microsoft Translator for users who cannot send documents to third-party APIs
@@ -83,4 +92,4 @@ Primary topics: offline document translation, local LLM translation, privacy-fir
 
 ## Licensing
 
-Copyright (c) 2024-2026 zimablue-io. Free for personal and non-commercial use. Commercial use requires written permission. Full license details in LICENSE.md at the repository root.
+Copyright (c) 2026 zimablue-io. Free for personal and non-commercial use. Commercial use requires written permission. Full license details in LICENSE.md at the repository root.
